@@ -1,116 +1,212 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Plus, Search, Filter, QrCode, Mail, Phone, CheckCircle, UserPlus, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { 
+  Users, 
+  Search, 
+  UserPlus, 
+  Download, 
+  Trash2, 
+  Edit, 
+  Phone, 
+  Mail, 
+  QrCode, 
+  CheckCircle2, 
+  RefreshCw,
+  FileText
+} from 'lucide-react';
 
-export default function SecretariaPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+interface Membro {
+  id: number;
+  numeroMembro: string;
+  nomeCompleto: string;
+  cpf: string;
+  telefone: string;
+  email: string;
+  congregacao?: { nome: string };
+  membroMinisterios?: { ministerio: { nome: string } }[];
+}
 
-  const members = [
-    { id: '1', name: 'Pr. João Oliveira', role: 'Pastor Presidente', status: 'Ativo', ministry: 'Liderança', phone: '(11) 98888-7777', email: 'admin@assembleia.ia' },
-    { id: '2', name: 'Maria Santos', role: 'Membro Solista', status: 'Ativo', ministry: 'Louvor', phone: '(11) 97777-6666', email: 'maria@gmail.com' },
-    { id: '3', name: 'Carlos Eduardo Silva', role: 'Operador de Som', status: 'Ativo', ministry: 'Mídia', phone: '(11) 96666-5555', email: 'carlos@gmail.com' },
-    { id: '4', name: 'Ana Paula Costa', role: 'Professora EBD', status: 'Visitante', ministry: 'Infantil', phone: '(11) 95555-4444', email: 'ana@gmail.com' },
-  ];
+export default function SecretariaAdminPage() {
+  const [membros, setMembros] = useState<Membro[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [editingMembro, setEditingMembro] = useState<Membro | null>(null);
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.ministry.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const fetchMembros = async (query = '') => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/membros?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.success) {
+        setMembros(data.data);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar membros:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembros(search);
+  }, [search]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Tem certeza que deseja excluir este cadastro de membro?')) return;
+
+    try {
+      const res = await fetch(`/api/membros?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setMembros(prev => prev.filter(m => m.id !== id));
+      }
+    } catch (e) {
+      alert('Erro ao excluir membro.');
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Número Membro', 'Nome Completo', 'CPF', 'Telefone', 'E-mail', 'Congregação'];
+    const rows = membros.map(m => [
+      m.numeroMembro || '',
+      `"${m.nomeCompleto}"`,
+      m.cpf || '',
+      m.telefone || '',
+      m.email || '',
+      `"${m.congregacao?.nome || 'Sede'}"`,
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Membros_Assembleia_de_Deus_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand-cyan" /> Secretaria & Rol de Membros
+          <h1 className="text-2xl font-extrabold text-[#0A2540] flex items-center gap-2">
+            <Users className="w-6 h-6 text-brand-blue" /> Área Administrativa — Rol de Membros
           </h1>
-          <p className="text-slate-400 text-xs mt-1">Gestão de cadastros, QR Code de presença e histórico ministerial no SQLite</p>
+          <p className="text-slate-500 text-xs mt-1">Consulta, edição, exclusão e exportação de cadastros no SQLite</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-slate-300 text-xs font-semibold hover:text-white transition-colors flex items-center gap-2">
-            <Download className="w-4 h-4" /> Exportar CSV
+          <button 
+            onClick={handleExportCSV}
+            className="px-4 py-2.5 rounded-xl bg-white border border-[#E6EBF1] shadow-stripe-sm text-[#0A2540] text-xs font-bold hover:bg-slate-50 transition-colors flex items-center gap-2"
+          >
+            <Download className="w-4 h-4 text-emerald-600" /> Exportar Lista (CSV)
           </button>
-          <button className="px-4 py-2.5 rounded-xl bg-flame-gradient text-white text-xs font-bold shadow-md shadow-brand-cyan/20 hover:scale-105 transition-transform flex items-center gap-2">
-            <UserPlus className="w-4 h-4" /> Cadastrar Membro
-          </button>
+
+          <Link 
+            href="/cadastro"
+            className="px-4 py-2.5 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md shadow-brand-cyan/20 hover:scale-105 transition-transform flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> Novo Cadastro Web
+          </Link>
         </div>
       </div>
 
-      {/* SEARCH AND FILTERS */}
-      <div className="glass-card rounded-2xl p-4 border border-white/5 flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative flex-1">
+      {/* BARRA DE PESQUISA POR NOME, TELEFONE OU CPF */}
+      <div className="bg-white rounded-2xl p-4 border border-[#E6EBF1] shadow-stripe-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
           <input 
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por nome, ministério ou telefone..."
-            className="w-full h-10 pl-10 pr-4 rounded-xl bg-slate-900/80 border border-white/10 text-white text-xs focus:outline-none focus:border-brand-cyan"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Pesquisar por nome, telefone, CPF ou número de membro..."
+            className="w-full h-10 pl-10 pr-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] text-xs focus:outline-none focus:border-brand-blue"
           />
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="px-3.5 py-2 rounded-xl bg-slate-900 border border-white/10 text-slate-300 text-xs font-medium flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5" /> Filtrar por Ministério
-          </button>
-        </div>
+        <button 
+          onClick={() => fetchMembros(search)}
+          className="px-4 py-2 rounded-xl bg-blue-50 border border-blue-200 text-brand-blue text-xs font-bold flex items-center gap-2"
+        >
+          <RefreshCw className="w-3.5 h-3.5" /> Atualizar Consulta
+        </button>
       </div>
 
-      {/* MEMBERS TABLE */}
-      <div className="glass-card rounded-2xl border border-white/5 overflow-hidden">
+      {/* TABELA DE MEMBROS */}
+      <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
+        <div className="p-4 bg-[#F8FAFC] border-b border-[#E6EBF1] flex items-center justify-between">
+          <span className="text-xs font-bold text-[#0A2540]">Membros Encontrados: {membros.length}</span>
+          <span className="text-[10px] text-slate-500 font-mono">SQLite: SELECT * FROM membros WHERE ativo = 1</span>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/80 border-b border-white/5 text-slate-400 uppercase font-semibold">
+            <thead className="bg-[#F8FAFC] border-b border-[#E6EBF1] text-slate-500 uppercase font-semibold">
               <tr>
-                <th className="py-4 px-6">Membro</th>
-                <th className="py-4 px-4">Ministério</th>
-                <th className="py-4 px-4">Contato</th>
-                <th className="py-4 px-4">Status</th>
-                <th className="py-4 px-4 text-right">QR Code Credencial</th>
+                <th className="py-3.5 px-4">Nº Membro</th>
+                <th className="py-3.5 px-4">Nome Completo</th>
+                <th className="py-3.5 px-4">CPF / Contato</th>
+                <th className="py-3.5 px-4">Congregação</th>
+                <th className="py-3.5 px-4">Ministérios</th>
+                <th className="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
-              {filteredMembers.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-900/40 transition-colors">
-                  <td className="py-4 px-6 font-medium text-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-brand-cyan/20 text-brand-cyan flex items-center justify-center font-bold text-xs">
-                        {member.name[0]}
-                      </div>
-                      <div>
-                        <span className="block text-white font-semibold">{member.name}</span>
-                        <span className="text-[10px] text-slate-400">{member.role}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4 text-slate-300">
-                    <span className="px-2.5 py-1 rounded-full bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 font-semibold text-[10px]">
-                      {member.ministry}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-slate-400 space-y-0.5">
-                    <div className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-slate-500" /> {member.phone}</div>
-                    <div className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-slate-500" /> {member.email}</div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] ${
-                      member.status === 'Ativo' 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    }`}>
-                      {member.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <button className="p-2 rounded-lg bg-slate-900 border border-white/10 hover:border-brand-cyan text-brand-cyan transition-colors" title="Gerar QR Code">
-                      <QrCode className="w-4 h-4" />
-                    </button>
-                  </td>
+            <tbody className="divide-y divide-[#E6EBF1]">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400">Carregando cadastros do banco...</td>
                 </tr>
-              ))}
+              ) : membros.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-400">Nenhum membro encontrado com o filtro pesquisado.</td>
+                </tr>
+              ) : (
+                membros.map((m) => (
+                  <tr key={m.id} className="hover:bg-[#F8FAFC] transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-brand-blue">{m.numeroMembro || 'AD-2026-0000'}</td>
+                    <td className="py-3.5 px-4 font-bold text-[#0A2540]">{m.nomeCompleto}</td>
+                    <td className="py-3.5 px-4 text-slate-600 space-y-0.5">
+                      <div>CPF: {m.cpf || 'Não informado'}</div>
+                      <div className="text-[10px] text-slate-500">{m.telefone || m.email || ''}</div>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600 font-semibold">{m.congregacao?.nome || 'Sede Assembleia de Deus'}</td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap gap-1">
+                        {m.membroMinisterios && m.membroMinisterios.length > 0 ? (
+                          m.membroMinisterios.map((item, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded bg-blue-50 text-brand-blue text-[10px] font-bold border border-blue-200">
+                              {item.ministerio.nome}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-slate-400 text-[10px]">Geral</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-right space-x-2">
+                      <button 
+                        onClick={() => alert(`Edição do cadastro #${m.numeroMembro}: ${m.nomeCompleto}`)}
+                        className="p-1.5 rounded-lg bg-blue-50 text-brand-blue border border-blue-200 hover:bg-blue-100 transition-colors"
+                        title="Editar Cadastro"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(m.id)}
+                        className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors"
+                        title="Excluir Cadastro"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
