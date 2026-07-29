@@ -1,0 +1,25 @@
+{
+  "name": "assembleia-ia-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sistema Operacional Inteligente para Igrejas com IA como Núcleo e SQLite",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:push": "npm run db:push --workspace=packages/db",
+    "db:generate": "npm run db:generate --workspace=packages/db",
+    "db:seed": "npm run db:seed --workspace=packages/db"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

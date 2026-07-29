@@ -1,0 +1,224 @@
+// Prisma Schema para Assembleia IA (SQLite Motor Multi-Tenant — Volume 3 AD Específico)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id            String   @id @default(uuid())
+  name          String
+  slug          String   @unique
+  plan          String   @default("GROWTH") // ESSENTIAL, GROWTH, IMPACT, DOMINATE
+  convention    String   @default("CGADB")  // CGADB, CADB, CONAMAD (Madureira), INDEPENDENT
+  logoUrl       String?
+  accentColor   String   @default("#00B2FE")
+  cnpj          String?
+  address       String?
+  city          String?
+  state         String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users         User[]
+  members       Member[]
+  roles         ChurchRole[]
+  transactions  FinancialTransaction[]
+  events        Event[]
+  schedules     Schedule[]
+  pastoralCares PastoralCare[]
+  aiLogs        AiLog[]
+  auditLogs     AuditLog[]
+}
+
+model ChurchRole {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code                  String
+  name                  String
+  category              String   // ECLESIASTICO, ADMINISTRATIVO, DEPARTAMENTO, LOUVOR, ENSINO, APOIO
+  rankOrder             Int      @default(100)
+  requiresConsecration Boolean  @default(false)
+  isSystem              Boolean  @default(true)
+  description           String?
+  createdAt             DateTime @default(now())
+
+  members               Member[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("MEMBER") // ADMIN, PASTOR, SECRETARY, TREASURER, VOLUNTEER, MEMBER
+  phone        String?
+  avatarUrl    String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  member       Member?
+  auditLogs    AuditLog[]
+
+  @@index([tenantId])
+}
+
+model Member {
+  id            String      @id @default(uuid())
+  tenantId      String
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId        String?     @unique
+  user          User?       @relation(fields: [userId], references: [id])
+  roleId        String?
+  churchRole    ChurchRole? @relation(fields: [roleId], references: [id])
+  fullName      String
+  cpf           String?
+  phone         String?
+  email         String?
+  birthDate     DateTime?
+  baptismDate   DateTime?
+  maritalStatus String?     // SINGLE, MARRIED, DIVORCED, WIDOWED
+  status        String      @default("ACTIVE") // ACTIVE, INACTIVE, VISITOR, TRANSFERRED
+  ministry      String?     // JUVENTUDE, LOUVOR, INFANTIL, CASAIS, MISSÕES, CIRCULO_DE_ORAÇÃO, EBD
+  congregation  String?     @default("Sede Central")
+  qrCodeToken   String?     @unique
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  pastoralCares PastoralCare[]
+  scheduleItems ScheduleItem[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+model FinancialTransaction {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  type        String   // INCOME (Dízimo/Oferta), EXPENSE (Despesa)
+  category    String   // DIZIMO, OFERTA, MISSOES, MANUTENCAO, EVENTOS, RECURSOS_HUMANOS
+  description String
+  amount      Float
+  paymentMethod String // PIX, CARTAO, BOLETO, DINHEIRO
+  status      String   @default("COMPLETED") // PENDING, COMPLETED, CANCELLED
+  date        DateTime @default(now())
+  payerName   String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([category])
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  location    String?
+  startDate   DateTime
+  endDate     DateTime
+  bannerUrl   String?
+  isPublic    Boolean  @default(true)
+  price       Float    @default(0)
+  capacity    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schedules   Schedule[]
+
+  @@index([tenantId])
+  @@index([startDate])
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id])
+  title       String
+  date        DateTime
+  department  String   // MIDIA, LOUVOR, RECEPCAO, INFANTIL, SEGURANCA, CIRCULO_ORAÇÃO
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED, CONFIRMED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items       ScheduleItem[]
+
+  @@index([tenantId])
+}
+
+model ScheduleItem {
+  id          String   @id @default(uuid())
+  scheduleId  String
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  role        String   // VOCAL, GUITARRA, SOM, TRANSMISSAO, PORTARIA
+  status      String   @default("PENDING") // PENDING, CONFIRMED, DECLINED
+  createdAt   DateTime @default(now())
+}
+
+model PastoralCare {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  pastorName  String
+  type        String   // VISITA, ACONSELHAMENTO, ORAÇÃO, ACOMPANHAMENTO
+  notes       String
+  urgency     String   @default("NORMAL") // LOW, NORMAL, HIGH, CRITICAL
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([urgency])
+}
+
+model AiLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  agentName   String   // MASTER, PASTORAL, SECRETARIA, FINANCEIRO, DESIGNER, ESCALAS
+  userPrompt  String
+  aiResponse  String
+  tokensUsed  Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([agentName])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // CREATE_MEMBER, UPDATE_TRANSACTION, GENERATE_ART, etc.
+  details     String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+}
