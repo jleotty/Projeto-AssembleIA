@@ -1,4 +1,4 @@
-// Prisma Schema para Cadastro de Membros — Assembleia de Deus (800 Membros Seed)
+// Prisma Schema para Cadastro de Membros e Conexão Financeira Sicredi API (SQLite Engine)
 
 generator client {
   provider = "prisma-client-js"
@@ -173,6 +173,56 @@ model Carteirinha {
   arquivo     String?
 
   @@map("carteirinhas")
+}
+
+// ==========================================
+// SICREDI OPEN BANKING INTEGRATION TABLES
+// ==========================================
+
+model SicrediConfig {
+  id              Int      @id @default(autoincrement())
+  cooperativa     String   // Código da Cooperativa ex: 0101
+  contaCorrente   String   // Código da Conta Corrente
+  clientId        String   @map("client_id")
+  clientSecret    String   @map("client_secret")
+  environment     String   @default("SANDBOX") // SANDBOX, PRODUCTION
+  mtlsCertPem     String?  @map("mtls_cert_pem")
+  mtlsKeyPem      String?  @map("mtls_key_pem")
+  autoSyncEnabled Int      @default(1) @map("auto_sync_enabled")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  createdEm       DateTime @default(now()) @map("created_em")
+
+  @@map("sicredi_configs")
+}
+
+model BankTransaction {
+  id              Int      @id @default(autoincrement())
+  sicrediTxId     String   @unique @map("sicredi_tx_id") // ID da transação no Sicredi
+  tipo            String   // ENTRADA (INFLOW), SAIDA (OUTFLOW)
+  categoria       String   // DIZIMO, OFERTA, MANUTENCAO, PAGAMENTO_BOLETO, TRANSFERENCIA_PIX
+  descricao       String
+  valor           Float
+  dataTransacao   DateTime @map("data_transacao")
+  pagadorNome     String?  @map("pagador_nome")
+  pagadorCpfCnpj  String?  @map("pagador_cpf_cnpj")
+  saldoResultante Float?   @map("saldo_resultante")
+  metodo          String   @default("PIX") // PIX, BOLETO, TED, DEBITO_CONTA
+  rawJsonPayload  String?  @map("raw_json_payload") // JSON completo retornado pela API para uso pela IA
+  dataRegistro    DateTime @default(now()) @map("data_registro")
+
+  @@index([tipo], map: "idx_bank_tx_tipo")
+  @@index([dataTransacao], map: "idx_bank_tx_data")
+  @@map("bank_transactions")
+}
+
+model SicrediWebhookLog {
+  id              Int      @id @default(autoincrement())
+  eventType       String   @map("event_type") // PIX_RECEBIDO, PAGAMENTO_EFETUADO, EXTRATO_ATUALIZADO
+  payload         String
+  processed       Int      @default(0)
+  receivedAt      DateTime @default(now()) @map("received_at")
+
+  @@map("sicredi_webhook_logs")
 }
 
 model Usuario {
