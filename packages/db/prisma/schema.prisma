@@ -1,4 +1,4 @@
-// Prisma Schema para Cadastro de Membros — Assembleia de Deus (SQLite Engine)
+// Prisma Schema para Cadastro de Membros — Assembleia de Deus (800 Membros Seed)
 
 generator client {
   provider = "prisma-client-js"
@@ -56,6 +56,8 @@ model Membro {
   filhos          Filho[]
   vidaEspiritual  VidaEspiritual?
   observacoes     ObservacaoMembro?
+  fotos           FotoMembro[]
+  carteirinha     Carteirinha?
   membroMinisterios MembroMinisterio[]
   historico       HistoricoMembro[]
 
@@ -144,6 +146,33 @@ model ObservacaoMembro {
   observacoes           String?
 
   @@map("observacoes_membro")
+}
+
+model FotoMembro {
+  id        Int    @id @default(autoincrement())
+  membroId  Int    @map("membro_id")
+  membro    Membro @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  arquivo   String
+  caminho   String
+  extensao  String @default("jpg")
+  principal Int    @default(1)
+
+  @@map("fotos_membros")
+}
+
+model Carteirinha {
+  id          Int      @id @default(autoincrement())
+  membroId    Int      @unique @map("membro_id")
+  membro      Membro   @relation(fields: [membroId], references: [id], onDelete: Cascade)
+
+  numero      String   @unique
+  dataEmissao DateTime @default(now()) @map("data_emissao")
+  validade    DateTime
+
+  arquivo     String?
+
+  @@map("carteirinhas")
 }
 
 model Usuario {
