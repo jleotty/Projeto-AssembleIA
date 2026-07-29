@@ -1,6 +1,5 @@
 import random
 from datetime import datetime, timedelta
-import sqlite3
 
 PRENOMES_MASC = ["João", "Pedro", "Lucas", "Mateus", "Gabriel", "Guilherme", "Gustavo", "Felipe", "Rafael", "Daniel", "Marcos", "Paulo", "André", "Samuel", "David", "Carlos", "Eduardo", "Rodrigo", "Fernando", "Marcelo", "Thiago", "Diego", "Alexandre", "Leonardo"]
 PRENOMES_FEM = ["Maria", "Ana", "Julia", "Beatriz", "Mariana", "Camila", "Larissa", "Amanda", "Letícia", "Jessica", "Fernanda", "Patrícia", "Bruna", "Vanessa", "Aline", "Carla", "Priscila", "Renata", "Paula", "Daniela", "Gabriela", "Rafaela", "Tatiane", "Luciana", "Adriana"]
@@ -12,13 +11,13 @@ LOGRADOUROS = ["Rua Principal", "Av. Brasil", "Rua das Palmeiras", "Av. Central"
 TALENTOS_LISTA = ["Pregação", "Instrumentista", "Canto", "Ensino", "Administração", "Evangelismo", "Sonoplastia", "Ornamentação", "Acolhimento"]
 NECESSIDADES_LISTA = ["", "", "", "", "", "Usa aparelho auditivo", "Necessita acessibilidade", "Diabético", "Visão reduzida"]
 
-def random_date(start_year, end_year):
+def random_date_iso(start_year, end_year):
     start = datetime(start_year, 1, 1)
     end = datetime(end_year, 12, 31)
-    return start + timedelta(days=random.randint(0, (end - start).days))
+    dt = start + timedelta(days=random.randint(0, (end - start).days))
+    return dt.strftime("%Y-%m-%dT00:00:00.000Z")
 
 def generate_cpf(index):
-    # CPF único baseado no índice do membro
     p1 = 100 + (index // 1000)
     p2 = (index * 7) % 900 + 100
     p3 = (index * 13) % 900 + 100
@@ -61,14 +60,12 @@ def main():
         "DELETE FROM ministerios;\n"
         "DELETE FROM congregacoes;\n"
         "DELETE FROM usuarios;\n\n"
-        "-- 1. CONGREGAÇÕES\n"
-        "INSERT INTO congregacoes (id, nome, endereco, telefone, pastor_responsavel) VALUES\n"
-        "(1, 'Assembleia de Deus - Sede Central', 'Av. Central, 1000 - Centro', '(11) 3333-1000', 'Pastor Titular Sede'),\n"
-        "(2, 'Congregação Jardim Esperança', 'Rua das Flores, 200 - Jd. Esperança', '(11) 3333-2000', 'Pastor Dirigente Esperança'),\n"
-        "(3, 'Congregação Vila Nova', 'Rua Nova, 50 - Vila Nova', '(11) 3333-3000', 'Evangelista Dirigente Vila Nova'),\n"
-        "(4, 'Congregação São José', 'Av. São José, 400 - São José', '(11) 3333-4000', 'Presbítero Dirigente São José'),\n"
-        "(5, 'Congregação Monte Sinai', 'Rua do Monte, 12 - Monte Sinai', '(11) 3333-5000', 'Pastor Dirigente Monte Sinai');\n\n"
-        "-- 2. MINISTÉRIOS / DEPARTAMENTOS (15)\n"
+        "INSERT INTO congregacoes (id, nome, endereco, telefone, pastor_responsavel, data_cadastro) VALUES\n"
+        "(1, 'Assembleia de Deus - Sede Central', 'Av. Central, 1000 - Centro', '(11) 3333-1000', 'Pastor Titular Sede', '2026-01-01T00:00:00.000Z'),\n"
+        "(2, 'Congregação Jardim Esperança', 'Rua das Flores, 200 - Jd. Esperança', '(11) 3333-2000', 'Pastor Dirigente Esperança', '2026-01-01T00:00:00.000Z'),\n"
+        "(3, 'Congregação Vila Nova', 'Rua Nova, 50 - Vila Nova', '(11) 3333-3000', 'Evangelista Dirigente Vila Nova', '2026-01-01T00:00:00.000Z'),\n"
+        "(4, 'Congregação São José', 'Av. São José, 400 - São José', '(11) 3333-4000', 'Presbítero Dirigente São José', '2026-01-01T00:00:00.000Z'),\n"
+        "(5, 'Congregação Monte Sinai', 'Rua do Monte, 12 - Monte Sinai', '(11) 3333-5000', 'Pastor Dirigente Monte Sinai', '2026-01-01T00:00:00.000Z');\n\n"
         "INSERT INTO ministerios (id, nome, descricao) VALUES\n"
         "(1, 'Pastorado', 'Corpo pastoral da igreja'),\n"
         "(2, 'Diaconato', 'Serviço e assistência diaconal'),\n"
@@ -85,11 +82,10 @@ def main():
         "(13, 'Mídia e Tecnologia', 'Som, iluminação e transmissão ao vivo'),\n"
         "(14, 'Ação Social', 'Assistência social e cestas básicas'),\n"
         "(15, 'Secretaria', 'Secretaria e registros ministeriais');\n\n"
-        "-- 3. USUÁRIOS DO SISTEMA\n"
-        "INSERT INTO usuarios (nome, email, senha_hash, perfil, ativo) VALUES\n"
-        "('Administrador Geral', 'admin@assembleia.com', 'hash_admin_123', 'Administrador', 1),\n"
-        "('Pastor Presidente', 'pastor@assembleia.com', 'hash_pastor_123', 'Pastor', 1),\n"
-        "('Secretária Titular', 'secretaria@assembleia.com', 'hash_sec_123', 'Secretaria', 1);\n\n"
+        "INSERT INTO usuarios (nome, email, senha_hash, perfil, ativo, criado_em) VALUES\n"
+        "('Administrador Geral', 'admin@assembleia.com', 'hash_admin_123', 'Administrador', 1, '2026-01-01T00:00:00.000Z'),\n"
+        "('Pastor Presidente', 'pastor@assembleia.com', 'hash_pastor_123', 'Pastor', 1, '2026-01-01T00:00:00.000Z'),\n"
+        "('Secretária Titular', 'secretaria@assembleia.com', 'hash_sec_123', 'Secretaria', 1, '2026-01-01T00:00:00.000Z');\n\n"
     ]
 
     min_counts = {i: 0 for i in range(1, 16)}
@@ -105,7 +101,7 @@ def main():
 
         idade = idades_pool[i-1]
         birth_year = current_year - idade
-        data_nasc = random_date(birth_year, birth_year).strftime("%Y-%m-%d")
+        data_nasc = random_date_iso(birth_year, birth_year)
 
         sexo = "Masculino" if random.random() < 0.5 else "Feminino"
         
@@ -126,11 +122,12 @@ def main():
         end = f"{random.choice(LOGRADOUROS)}, {random.randint(10,999)}"
         bairro = random.choice(BAIRROS)
         cep = f"{random.randint(10000,99999):05d}-{random.randint(100,999):03d}"
+        data_cad = random_date_iso(2025, 2026)
 
         # Insert Membro
         sql_statements.append(
-            f"INSERT INTO membros (id, numero_membro, congregacao_id, nome_completo, data_nascimento, sexo, estado_civil, cpf, rg, telefone, whatsapp, email, endereco, numero, bairro, cidade, estado, cep, ativo) VALUES "
-            f"({i}, '{num_membro}', {cong_id}, '{nome}', '{data_nasc}', '{sexo}', '{estado_civil}', '{cpf}', '{rg}', '{fone}', '{fone}', '{email}', '{end}', '{random.randint(1,500)}', '{bairro}', 'São Paulo', 'SP', '{cep}', 1);"
+            f"INSERT INTO membros (id, numero_membro, congregacao_id, nome_completo, data_nascimento, sexo, estado_civil, cpf, rg, telefone, whatsapp, email, endereco, numero, bairro, cidade, estado, cep, ativo, data_cadastro) VALUES "
+            f"({i}, '{num_membro}', {cong_id}, '{nome}', '{data_nasc}', '{sexo}', '{estado_civil}', '{cpf}', '{rg}', '{fone}', '{fone}', '{email}', '{end}', '{random.randint(1,500)}', '{bairro}', 'São Paulo', 'SP', '{cep}', 1, '{data_cad}');"
         )
 
         # 60% tem familiares
@@ -149,17 +146,17 @@ def main():
             for f_idx in range(num_filhos):
                 nome_filho = f"{random.choice(PRENOMES_MASC if random.random() < 0.5 else PRENOMES_FEM)} {nome.split()[-1]}"
                 idade_filho = random.randint(1, min(25, max(1, idade - 18)))
-                data_filho = f"{current_year - idade_filho}-05-10"
+                data_filho = f"{current_year - idade_filho}-05-10T00:00:00.000Z"
                 sql_statements.append(
                     f"INSERT INTO filhos (membro_id, nome, data_nascimento, idade) VALUES ({i}, '{nome_filho}', '{data_filho}', {idade_filho});"
                 )
 
         # Vida Espiritual
         has_conv = 1 if random.random() < 0.8 else 0
-        conv_date = random_date(max(birth_year + 10, 1990), current_year - 1).strftime("%Y-%m-%d") if has_conv else None
+        conv_date = random_date_iso(max(birth_year + 10, 1990), current_year - 1) if has_conv else None
         
         bat_aguas = 1 if random.random() < 0.7 else 0
-        bat_date = random_date(max(birth_year + 12, 1992), current_year).strftime("%Y-%m-%d") if bat_aguas else None
+        bat_date = random_date_iso(max(birth_year + 12, 1992), current_year) if bat_aguas else None
         igreja_bat = "Assembleia de Deus Sede" if bat_aguas else ""
 
         bat_espirito = 1 if random.random() < 0.55 else 0
@@ -181,8 +178,9 @@ def main():
         )
 
         # Carteirinha
-        dt_emissao = random_date(2024, 2026).strftime("%Y-%m-%d")
-        dt_validade = f"{int(dt_emissao[:4]) + 5}{dt_emissao[4:]}"
+        dt_emissao = random_date_iso(2024, 2026)
+        year_em = int(dt_emissao[:4])
+        dt_validade = f"{year_em + 5}{dt_emissao[4:]}"
         sql_statements.append(
             f"INSERT INTO carteirinhas (membro_id, numero, data_emissao, validade, arquivo) VALUES "
             f"({i}, '{num_carteirinha}', '{dt_emissao}', '{dt_validade}', 'carteirinhas/{num_carteirinha}.png');"
@@ -200,8 +198,8 @@ def main():
 
         # Histórico
         sql_statements.append(
-            f"INSERT INTO historico_membros (membro_id, usuario_id, acao, descricao) VALUES "
-            f"({i}, 1, 'Abertura de cadastro', 'Cadastro inicial importado no sistema');"
+            f"INSERT INTO historico_membros (membro_id, usuario_id, acao, descricao, data) VALUES "
+            f"({i}, 1, 'Abertura de cadastro', 'Cadastro inicial importado no sistema', '{data_cad}');"
         )
 
         # Atribuição aos ministérios
@@ -228,7 +226,7 @@ def main():
             min_counts[m_id] += 1
             sql_statements.append(
                 f"INSERT INTO membro_ministerio (membro_id, ministerio_id, data_inicio, ativo) VALUES "
-                f"({i}, {m_id}, '2026-01-01', 1);"
+                f"({i}, {m_id}, '2026-01-01T00:00:00.000Z', 1);"
             )
 
     sql_statements.append("\nPRAGMA foreign_keys = ON;\nCOMMIT;\n")
@@ -236,29 +234,7 @@ def main():
     with open("/home/julian/Documentos/Projeto AssembleIA/seed_igreja_assembleia.sql", "w", encoding="utf-8") as f:
         f.write("\n".join(sql_statements))
 
-    # Reset Script
-    reset_sql = """-- SCRIPT DE RESET DE SEED
-PRAGMA foreign_keys = OFF;
-BEGIN TRANSACTION;
-DELETE FROM historico_membros;
-DELETE FROM membro_ministerio;
-DELETE FROM observacoes_membro;
-DELETE FROM carteirinhas;
-DELETE FROM fotos_membros;
-DELETE FROM vida_espiritual;
-DELETE FROM filhos;
-DELETE FROM familiares;
-DELETE FROM membros;
-DELETE FROM ministerios;
-DELETE FROM congregacoes;
-DELETE FROM usuarios;
-PRAGMA foreign_keys = ON;
-COMMIT;
-"""
-    with open("/home/julian/Documentos/Projeto AssembleIA/reset_seed.sql", "w", encoding="utf-8") as f:
-        f.write(reset_sql)
-
-    print("✅ seed_igreja_assembleia.sql e reset_seed.sql gerados com sucesso!")
+    print("✅ seed_igreja_assembleia.sql atualizado com ISO-8601 strings para Prisma SQLite!")
 
 if __name__ == "__main__":
     main()

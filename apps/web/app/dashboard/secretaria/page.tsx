@@ -12,11 +12,8 @@ import {
   RefreshCw,
   X,
   Send,
-  User,
-  Heart,
-  BookOpen,
-  Sparkles,
-  CheckCircle2
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface Membro {
@@ -35,8 +32,9 @@ export default function SecretariaAdminPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
-  // Form State para Modal Inline
   const [form, setForm] = useState({
     nomeCompleto: '',
     dataNascimento: '',
@@ -145,15 +143,24 @@ export default function SecretariaAdminPage() {
     }
   };
 
+  // Paginação dos 800 membros
+  const totalPages = Math.ceil(membros.length / itemsPerPage);
+  const paginatedMembros = membros.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[#0A2540] flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand-blue" /> Área Administrativa — Rol de Membros
+            <Users className="w-6 h-6 text-brand-blue" /> Rol de Membros Cadastrados ({membros.length})
           </h1>
-          <p className="text-[#425466] text-xs mt-1 font-medium">Consulta, edição, exclusão e exportação de cadastros no SQLite</p>
+          <p className="text-[#425466] text-xs mt-1 font-semibold">
+            Banco de Dados SQLite — Consulta, filtro, edição, exclusão e exportação
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -161,10 +168,9 @@ export default function SecretariaAdminPage() {
             onClick={handleExportCSV}
             className="px-4 py-2.5 rounded-xl bg-white border border-[#E6EBF1] shadow-stripe-sm text-[#0A2540] text-xs font-bold hover:bg-slate-50 transition-colors flex items-center gap-2"
           >
-            <Download className="w-4 h-4 text-emerald-600" /> Exportar Lista (CSV)
+            <Download className="w-4 h-4 text-emerald-600" /> Exportar Todos ({membros.length}) em CSV
           </button>
 
-          {/* BOTÃO CADASTRAR MEMBRO (ABRE MODAL OU NAVEGA) */}
           <button 
             onClick={() => setShowModal(true)}
             className="px-5 py-2.5 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md shadow-brand-cyan/20 hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
@@ -181,8 +187,11 @@ export default function SecretariaAdminPage() {
           <input 
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Pesquisar por nome, telefone, CPF ou número de membro..."
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Pesquisar entre os 800 membros por nome, CPF, telefone ou número..."
             className="w-full h-10 pl-10 pr-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold text-xs focus:outline-none focus:border-brand-blue"
           />
         </div>
@@ -191,15 +200,17 @@ export default function SecretariaAdminPage() {
           onClick={() => fetchMembros(search)}
           className="px-4 py-2 rounded-xl bg-blue-50 border border-blue-200 text-brand-blue text-xs font-bold flex items-center gap-2"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Atualizar Consulta
+          <RefreshCw className="w-3.5 h-3.5" /> Atualizar Tabela
         </button>
       </div>
 
-      {/* TABELA DE MEMBROS (CORRIGIDA COR DO TEXTO DOS NOMES PARA PRETO/NAVY CLARO ESCURO VISÍVEL) */}
+      {/* TABELA DE MEMBROS */}
       <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
         <div className="p-4 bg-[#F8FAFC] border-b border-[#E6EBF1] flex items-center justify-between">
-          <span className="text-xs font-bold text-[#0A2540]">Membros Encontrados: {membros.length}</span>
-          <span className="text-[10px] text-[#425466] font-mono font-bold">SQLite: SELECT * FROM membros WHERE ativo = 1</span>
+          <span className="text-xs font-bold text-[#0A2540]">
+            Exibindo página {currentPage} de {totalPages || 1} (Total: {membros.length} membros no SQLite)
+          </span>
+          <span className="text-[10px] text-[#425466] font-mono font-bold">SELECT * FROM membros WHERE ativo = 1</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -208,7 +219,7 @@ export default function SecretariaAdminPage() {
               <tr>
                 <th className="py-3.5 px-4">Nº Membro</th>
                 <th className="py-3.5 px-4">Nome Completo</th>
-                <th className="py-3.5 px-4">CPF / Contato</th>
+                <th className="py-3.5 px-4">CPF / Telefone</th>
                 <th className="py-3.5 px-4">Congregação</th>
                 <th className="py-3.5 px-4">Ministérios</th>
                 <th className="py-3.5 px-4 text-right">Ações</th>
@@ -219,16 +230,15 @@ export default function SecretariaAdminPage() {
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-[#425466] font-semibold">Carregando cadastros do banco...</td>
                 </tr>
-              ) : membros.length === 0 ? (
+              ) : paginatedMembros.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#425466] font-semibold">Nenhum membro encontrado. Clique em "Cadastrar Membro" acima.</td>
+                  <td colSpan={6} className="py-8 text-center text-[#425466] font-semibold">Nenhum membro encontrado com a busca.</td>
                 </tr>
               ) : (
-                membros.map((m) => (
+                paginatedMembros.map((m) => (
                   <tr key={m.id} className="hover:bg-[#F8FAFC] transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-extrabold text-brand-blue">{m.numeroMembro || 'AD-2026-0000'}</td>
+                    <td className="py-3.5 px-4 font-mono font-extrabold text-brand-blue">{m.numeroMembro || `AD-${m.id.toString().padStart(6, '0')}`}</td>
                     
-                    {/* TEXTO DO NOME DO MEMBRO CORRIGIDO PARA ALTO CONTRASTE (#0A2540) */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-100 text-brand-blue font-extrabold flex items-center justify-center text-xs shrink-0">
@@ -236,16 +246,16 @@ export default function SecretariaAdminPage() {
                         </div>
                         <div>
                           <span className="block font-extrabold text-[#0A2540] text-sm">{m.nomeCompleto}</span>
-                          <span className="text-[10px] text-[#425466] font-semibold">Membro Cadastrado</span>
+                          <span className="text-[10px] text-[#425466] font-semibold">{m.email || 'Membro Ativo'}</span>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-[#425466] font-semibold space-y-0.5">
-                      <div className="text-[#0A2540] font-bold">CPF: {m.cpf || 'Não informado'}</div>
-                      <div className="text-[11px] text-[#425466] font-medium">{m.telefone || m.email || ''}</div>
+                      <div className="text-[#0A2540] font-bold">CPF: {m.cpf || 'Fictício'}</div>
+                      <div className="text-[11px] text-[#425466] font-medium">{m.telefone || ''}</div>
                     </td>
-                    <td className="py-3.5 px-4 text-[#0A2540] font-bold">{m.congregacao?.nome || 'Sede Assembleia de Deus'}</td>
+                    <td className="py-3.5 px-4 text-[#0A2540] font-bold">{m.congregacao?.nome || 'Sede Central'}</td>
                     <td className="py-3.5 px-4">
                       <div className="flex flex-wrap gap-1">
                         {m.membroMinisterios && m.membroMinisterios.length > 0 ? (
@@ -261,7 +271,7 @@ export default function SecretariaAdminPage() {
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <button 
-                        onClick={() => alert(`Edição do cadastro #${m.numeroMembro}: ${m.nomeCompleto}`)}
+                        onClick={() => alert(`Edição do membro #${m.numeroMembro}: ${m.nomeCompleto}`)}
                         className="p-1.5 rounded-lg bg-blue-50 text-brand-blue border border-blue-200 hover:bg-blue-100 transition-colors"
                         title="Editar Cadastro"
                       >
@@ -281,15 +291,39 @@ export default function SecretariaAdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* CONTROLES DE PAGINAÇÃO */}
+        <div className="p-4 bg-[#F8FAFC] border-t border-[#E6EBF1] flex items-center justify-between">
+          <span className="text-xs text-[#425466] font-bold">
+            Página {currentPage} de {totalPages || 1}
+          </span>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg bg-white border border-[#E6EBF1] text-xs font-bold disabled:opacity-50 flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> Anterior
+            </button>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-lg bg-white border border-[#E6EBF1] text-xs font-bold disabled:opacity-50 flex items-center gap-1"
+            >
+              Próxima <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* MODAL INLINE DE CADASTRO DE MEMBRO */}
+      {/* MODAL INLINE DE CADASTRO */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-[#E6EBF1] max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-[#E6EBF1]">
               <h2 className="text-xl font-extrabold text-[#0A2540] flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-brand-blue" /> Formulário de Cadastro de Membro
+                <UserPlus className="w-5 h-5 text-brand-blue" /> Cadastro de Membro — Igreja Assembleia de Deus
               </h2>
               <button 
                 onClick={() => setShowModal(false)}
@@ -300,7 +334,6 @@ export default function SecretariaAdminPage() {
             </div>
 
             <form onSubmit={handleModalSubmit} className="space-y-6">
-              {/* DADOS PESSOAIS */}
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold text-brand-blue uppercase border-b pb-1">1. Dados Pessoais</h3>
                 <div>
@@ -362,7 +395,6 @@ export default function SecretariaAdminPage() {
                 </div>
               </div>
 
-              {/* BOTÕES */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E6EBF1]">
                 <button 
                   type="button" 
@@ -375,7 +407,7 @@ export default function SecretariaAdminPage() {
                   type="submit" 
                   className="px-6 py-2 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" /> Salvar Cadastro
+                  <Send className="w-4 h-4" /> Enviar Cadastro
                 </button>
               </div>
             </form>
