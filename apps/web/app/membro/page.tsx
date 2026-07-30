@@ -1,14 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { 
-  CreditCard, 
   Download, 
-  QrCode as QrCodeIcon, 
   ShieldCheck,
   Search,
-  Share2,
   CheckCircle
 } from 'lucide-react';
 
@@ -65,17 +61,17 @@ export default function MembroPortalPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F9FC] py-12 px-4">
-      <div className="max-w-xl mx-auto space-y-8">
+      <div className="max-w-md mx-auto space-y-8">
         {/* HEADER */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-brand-blue text-xs font-extrabold uppercase">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Carteira Digital Oficial do Membro
+            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Carteira Digital Oficial
           </div>
-          <h1 className="text-3xl font-extrabold text-[#0A2540]">
+          <h1 className="text-2xl font-extrabold text-[#0A2540]">
             Assembleia de Deus
           </h1>
           <p className="text-xs text-[#425466] font-semibold">
-            Identificação Oficial de Membro com QR Code de Autenticidade em Tempo Real.
+            Identificação de Membro com Autenticidade em Tempo Real.
           </p>
         </div>
 
@@ -86,97 +82,88 @@ export default function MembroPortalPage() {
             value={searchNumero}
             onChange={(e) => setSearchNumero(e.target.value)}
             placeholder="Digite seu Nº de Membro ou Nome"
-            className="flex-1 h-12 px-4 rounded-2xl border border-[#E6EBF1] bg-white text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-brand-blue"
+            className="flex-1 h-11 px-4 rounded-xl border border-[#E6EBF1] bg-white text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-brand-blue"
           />
           <button 
             type="submit"
             disabled={loading}
-            className="px-6 py-3.5 rounded-2xl bg-[#0A2540] text-white font-extrabold text-xs shadow hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer"
+            className="px-5 py-3 rounded-xl bg-[#0A2540] text-white font-extrabold text-xs shadow hover:bg-slate-800 transition-colors flex items-center gap-2 cursor-pointer"
           >
             <Search className="w-4 h-4" /> Consultar
           </button>
         </form>
 
-        {/* CARTÃO DIGITAL COM GRADIENTE FIEL DA CHAMA (AZUL -> PÚRPURA -> LARANJA) */}
+        {/* CARTÃO DIGITAL ELEGANTE, CLEAN E PROFISSIONAL (STRIPE NAVY #0A2540) */}
         <div className="space-y-4">
-          <div className="relative rounded-3xl p-7 bg-gradient-to-br from-[#0062FF] via-[#61279E] to-[#FF4B00] text-white shadow-2xl border border-white/20 overflow-hidden space-y-6">
-            {/* BRILHO SUAVE */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="relative rounded-3xl p-6 bg-[#0A2540] text-white shadow-2xl border border-[#1E4976] overflow-hidden space-y-6">
+            {/* SUBTIL DETALHE SUPERIOR */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-purple-500 to-amber-500" />
 
             {/* CABEÇALHO DO CARTÃO */}
-            <div className="flex items-start justify-between relative z-10">
+            <div className="flex items-start justify-between relative z-10 pt-1">
               <div className="flex items-center gap-3">
-                <img src="/logo.jpg" alt="Logo AD" className="w-12 h-12 rounded-2xl object-cover border-2 border-white/40 shadow-md" />
+                <img src="/logo.jpg" alt="Logo AD" className="w-11 h-11 rounded-xl object-cover border border-white/20 shadow" />
                 <div>
                   <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">Igreja Assembleia de Deus</h2>
-                  <p className="text-[10px] text-amber-200 font-semibold">{membroData.congregacao}</p>
+                  <p className="text-[10px] text-slate-300 font-medium">{membroData.congregacao}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] font-extrabold uppercase">
-                <CheckCircle className="w-3 h-3 text-emerald-400" /> ATIVO
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-extrabold uppercase">
+                <CheckCircle className="w-3 h-3" /> ATIVO
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE GRANDE */}
-            <div className="grid grid-cols-12 gap-4 items-center relative z-10 pt-2">
+            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE LIMPO */}
+            <div className="grid grid-cols-12 gap-3 items-center relative z-10">
               {/* FOTO 3X4 E DADOS (ESQUERDA) */}
               <div className="col-span-8 flex items-center gap-3">
                 <img 
                   src={membroData.fotoCarteirinha} 
                   alt="Foto do Membro" 
-                  className="w-20 h-24 object-cover rounded-2xl border-2 border-white/50 shadow-lg flex-shrink-0"
+                  className="w-18 h-22 object-cover rounded-xl border border-white/30 shadow flex-shrink-0"
                 />
 
-                <div className="space-y-2 overflow-hidden">
+                <div className="space-y-1.5 overflow-hidden">
                   <div>
-                    <span className="text-[9px] text-amber-200 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
-                    <h3 className="text-sm font-extrabold text-white truncate leading-tight tracking-wide">{membroData.nomeCompleto}</h3>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
+                    <h3 className="text-xs font-extrabold text-white truncate leading-tight uppercase">{membroData.nomeCompleto}</h3>
                   </div>
 
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <div>
-                      <span className="text-[8px] text-white/80 font-bold uppercase block">REGISTRO</span>
-                      <span className="font-mono font-extrabold text-amber-300">{membroData.numeroMembro}</span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase block">REGISTRO</span>
+                      <span className="font-mono font-extrabold text-amber-400 text-[11px]">{membroData.numeroMembro}</span>
                     </div>
                     <div>
-                      <span className="text-[8px] text-white/80 font-bold uppercase block">VALIDADE</span>
-                      <span className="font-bold text-white">{membroData.validade}</span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase block">VALIDADE</span>
+                      <span className="font-bold text-slate-200 text-[11px]">{membroData.validade}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* QR CODE GRANDE COM MOLDURA BRANCA (DIREITA) */}
+              {/* QR CODE ÚNICO (DIREITA) */}
               <div className="col-span-4 flex flex-col items-center justify-center">
-                <div className="bg-white p-2.5 rounded-2xl shadow-2xl border-2 border-white/30">
+                <div className="bg-white p-1.5 rounded-xl shadow-md border border-white/20">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(membroData.qrCodeContent)}`} 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(membroData.qrCodeContent)}`} 
                     alt="QR Code Único"
-                    className="w-20 h-20 object-contain"
+                    className="w-16 h-16 object-contain"
                   />
                 </div>
-                <span className="text-[8px] text-white font-bold uppercase mt-1 text-center">QR CODE ÚNICO</span>
+                <span className="text-[8px] text-slate-300 font-bold uppercase mt-1 text-center">QR CODE ÚNICO</span>
               </div>
             </div>
           </div>
 
-          {/* BOTÕES DE AÇÃO */}
-          <div className="space-y-3">
-            <button 
-              onClick={() => alert('Link da carteirinha copiado para o WhatsApp!')}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0062FF] via-[#61279E] to-[#FF4B00] text-white font-extrabold text-xs shadow-lg hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4" /> Compartilhar carteirinha
-            </button>
-
-            <button 
-              onClick={() => window.print()}
-              className="w-full py-3.5 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] font-extrabold text-xs shadow-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-brand-blue" /> Salvar na galeria (Imprimir PDF)
-            </button>
-          </div>
+          {/* APENAS O BOTÃO SALVAR NA GALERIA */}
+          <button 
+            onClick={() => window.print()}
+            className="w-full py-3.5 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] font-extrabold text-xs shadow-stripe-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-brand-blue" /> Salvar na galeria
+          </button>
         </div>
       </div>
     </div>
