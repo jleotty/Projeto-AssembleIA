@@ -1,0 +1,77 @@
+{
+  "name": "AssembleIA — Automação WhatsApp & Sicredi n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "options": {}
+      },
+      "name": "Webhook WhatsApp Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/whatsapp/webhook",
+        "responseFormat": "json",
+        "options": {}
+      },
+      "name": "Chamar Agente Hugging Face IA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "name": "Gatilho Recorrente de Escalas (a cada 6h)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/whatsapp",
+        "options": {}
+      },
+      "name": "Disparar Escalas Recorrentes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 500]
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp Input": {
+      "main": [
+        [
+          {
+            "node": "Chamar Agente Hugging Face IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gatilho Recorrente de Escalas (a cada 6h)": {
+      "main": [
+        [
+          {
+            "node": "Disparar Escalas Recorrentes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
