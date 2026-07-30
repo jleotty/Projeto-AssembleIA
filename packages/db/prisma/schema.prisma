@@ -1,4 +1,4 @@
-// Prisma Schema para Cadastro de Membros e Conexão Financeira Sicredi API (SQLite Engine)
+// Prisma Schema — AssembleIA (Com foto de carteirinha obrigatória, fotos de banner, agendamento de status e escalas WhatsApp)
 
 generator client {
   provider = "prisma-client-js"
@@ -46,7 +46,7 @@ model Membro {
   cidade          String?
   estado          String?
   cep             String?
-  foto            String?
+  foto            String?   // Foto principal de carteirinha
 
   ativo           Int       @default(1)
   dataCadastro    DateTime  @default(now()) @map("data_cadastro")
@@ -148,11 +148,13 @@ model ObservacaoMembro {
   @@map("observacoes_membro")
 }
 
+// FOTO DO MEMBRO: CARTEIRINHA (OBRIGATÓRIA) VS BANNER (OPCIONAL)
 model FotoMembro {
   id        Int    @id @default(autoincrement())
   membroId  Int    @map("membro_id")
   membro    Membro @relation(fields: [membroId], references: [id], onDelete: Cascade)
 
+  tipo      String @default("CARTEIRINHA") // CARTEIRINHA (obrigatória), BANNER (opcional)
   arquivo   String
   caminho   String
   extensao  String @default("jpg")
@@ -175,17 +177,39 @@ model Carteirinha {
   @@map("carteirinhas")
 }
 
-// ==========================================
-// SICREDI OPEN BANKING INTEGRATION TABLES
-// ==========================================
+// AGENDAMENTO E STATUS DO WHATSAPP (TEXTO + MÍDIA/BANNER)
+model StatusWhatsapp {
+  id           Int      @id @default(autoincrement())
+  titulo       String
+  tipoMedia    String   @default("TEXTO") // TEXTO, IMAGEM_BANNER, VIDEO
+  mediaUrl     String?  @map("media_url")
+  legenda      String?
+  dataAgendada DateTime @map("data_agendada")
+  status       String   @default("PENDENTE") // PENDENTE, ENVIADO, CANCELADO
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  @@map("status_whatsapp")
+}
+
+// ESCALAS E AUTOMAÇÃO WHATSAPP
+model EscalaAgendada {
+  id           Int      @id @default(autoincrement())
+  departamento String   // Louvor, Mídia, Recepção, EBD
+  dataEscala   DateTime @map("data_escala")
+  conteudo     String
+  enviada      Int      @default(0)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+
+  @@map("escalas_agendadas")
+}
 
 model SicrediConfig {
   id              Int      @id @default(autoincrement())
-  cooperativa     String   // Código da Cooperativa ex: 0101
-  contaCorrente   String   // Código da Conta Corrente
+  cooperativa     String
+  contaCorrente   String
   clientId        String   @map("client_id")
   clientSecret    String   @map("client_secret")
-  environment     String   @default("SANDBOX") // SANDBOX, PRODUCTION
+  environment     String   @default("SANDBOX")
   mtlsCertPem     String?  @map("mtls_cert_pem")
   mtlsKeyPem      String?  @map("mtls_key_pem")
   autoSyncEnabled Int      @default(1) @map("auto_sync_enabled")
@@ -197,17 +221,17 @@ model SicrediConfig {
 
 model BankTransaction {
   id              Int      @id @default(autoincrement())
-  sicrediTxId     String   @unique @map("sicredi_tx_id") // ID da transação no Sicredi
-  tipo            String   // ENTRADA (INFLOW), SAIDA (OUTFLOW)
-  categoria       String   // DIZIMO, OFERTA, MANUTENCAO, PAGAMENTO_BOLETO, TRANSFERENCIA_PIX
+  sicrediTxId     String   @unique @map("sicredi_tx_id")
+  tipo            String
+  categoria       String
   descricao       String
   valor           Float
   dataTransacao   DateTime @map("data_transacao")
   pagadorNome     String?  @map("pagador_nome")
   pagadorCpfCnpj  String?  @map("pagador_cpf_cnpj")
   saldoResultante Float?   @map("saldo_resultante")
-  metodo          String   @default("PIX") // PIX, BOLETO, TED, DEBITO_CONTA
-  rawJsonPayload  String?  @map("raw_json_payload") // JSON completo retornado pela API para uso pela IA
+  metodo          String   @default("PIX")
+  rawJsonPayload  String?  @map("raw_json_payload")
   dataRegistro    DateTime @default(now()) @map("data_registro")
 
   @@index([tipo], map: "idx_bank_tx_tipo")
@@ -217,7 +241,7 @@ model BankTransaction {
 
 model SicrediWebhookLog {
   id              Int      @id @default(autoincrement())
-  eventType       String   @map("event_type") // PIX_RECEBIDO, PAGAMENTO_EFETUADO, EXTRATO_ATUALIZADO
+  eventType       String   @map("event_type")
   payload         String
   processed       Int      @default(0)
   receivedAt      DateTime @default(now()) @map("received_at")
@@ -230,7 +254,7 @@ model Usuario {
   nome      String
   email     String    @unique
   senhaHash String    @map("senha_hash")
-  perfil    String    // Administrador, Pastor, Secretaria
+  perfil    String
   ativo     Int       @default(1)
   criadoEm  DateTime  @default(now()) @map("criado_em")
 

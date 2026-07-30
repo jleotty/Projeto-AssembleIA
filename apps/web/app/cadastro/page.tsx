@@ -1,29 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { 
   User, 
+  Users, 
   Heart, 
+  BookOpen, 
   Sparkles, 
   CheckCircle2, 
-  AlertCircle, 
-  Plus, 
-  Trash2, 
-  Send,
-  ArrowLeft,
-  BookOpen
+  Send, 
+  Upload, 
+  AlertCircle,
+  Camera,
+  Image as ImageIcon
 } from 'lucide-react';
 
-export default function CadastroMembroPage() {
+export default function PublicCadastroMembroPage() {
+  const [submitted, setSubmitted] = useState(false);
+  const [numeroMembroGerado, setNumeroMembroGerado] = useState('');
   const [loading, setLoading] = useState(false);
-  const [successData, setSuccessData] = useState<{ numeroMembro: string } | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [erroFoto, setErroFoto] = useState('');
 
-  // Formulário Estado
+  // Form state com fotoCarteirinha (OBRIGATÓRIA) e fotoBanner (OPCIONAL)
   const [form, setForm] = useState({
-    // 1. Dados Pessoais
     nomeCompleto: '',
     dataNascimento: '',
     sexo: 'Masculino',
@@ -38,15 +38,13 @@ export default function CadastroMembroPage() {
     cidade: '',
     estado: 'SP',
     cep: '',
-
-    // 2. Informações Familiares
+    fotoCarteirinha: '', // OBRIGATÓRIA
+    fotoBanner: '',      // OPCIONAL
     nomePai: '',
     nomeMae: '',
     nomeConjuge: '',
-    qtdFilhos: 0,
+    quantidadeFilhos: '0',
     filhos: [] as { nome: string; idade: string }[],
-
-    // 3. Informações Espirituais
     dataConversao: '',
     batizadoAguas: 'Não',
     dataBatismo: '',
@@ -54,96 +52,38 @@ export default function CadastroMembroPage() {
     batismoEspiritoSanto: 'Não',
     veioOutraIgreja: 'Não',
     igrejaAnterior: '',
-
-    // 4. Participação na Igreja
     ministerios: [] as string[],
     talentos: '',
-
-    // 5. Informações Adicionais
     necessidadesEspeciais: '',
     contatoEmergencia: '',
     telefoneEmergencia: '',
-
-    // 6. Termo de Compromisso
     termoCompromisso: false,
   });
 
-  const estadosBR = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 
-    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-  ];
-
-  const listaMinisterios = [
-    'Louvor',
-    'Escola Bíblica Dominical',
-    'Crianças',
-    'Jovens',
-    'Adolescentes',
-    'Evangelismo',
-    'Missões',
-    'Recepção',
-    'Outro ministério'
-  ];
-
-  // Máscaras
-  const formatCPF = (v: string) => {
-    return v.replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .substring(0, 14);
-  };
-
-  const formatCEP = (v: string) => {
-    return v.replace(/\D/g, '')
-      .replace(/^(\d{5})(\d)/, '$1-$2')
-      .substring(0, 9);
-  };
-
-  const formatTelefone = (v: string) => {
-    return v.replace(/\D/g, '')
-      .replace(/^(\d{2})(\d)/g, '($1) $2')
-      .replace(/(\d)(\d{4})$/, '$1-$2')
-      .substring(0, 15);
-  };
-
-  const handleAddFilho = () => {
-    setForm(prev => ({
-      ...prev,
-      filhos: [...prev.filhos, { nome: '', idade: '' }]
-    }));
-  };
-
-  const handleRemoveFilho = (index: number) => {
-    setForm(prev => ({
-      ...prev,
-      filhos: prev.filhos.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleMinisterioToggle = (min: string) => {
-    setForm(prev => {
-      const exists = prev.ministerios.includes(min);
-      return {
-        ...prev,
-        ministerios: exists 
-          ? prev.ministerios.filter(m => m !== min)
-          : [...prev.ministerios, min]
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'fotoCarteirinha' | 'fotoBanner') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(prev => ({ ...prev, [field]: reader.result as string }));
+        if (field === 'fotoCarteirinha') setErroFoto('');
       };
-    });
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.fotoCarteirinha) {
+      setErroFoto('A Foto de Carteirinha (rosto nítido, fundo limpo) é OBRIGATÓRIA. Por favor, envie uma foto.');
+      return;
+    }
     if (!form.termoCompromisso) {
-      setErrorMsg('Você precisa aceitar o Termo de Compromisso para prosseguir.');
+      alert('Você precisa aceitar os termos de compromisso para enviar o cadastro.');
       return;
     }
 
     setLoading(true);
-    setErrorMsg('');
-
     try {
       const res = await fetch('/api/membros', {
         method: 'POST',
@@ -153,550 +93,233 @@ export default function CadastroMembroPage() {
 
       const data = await res.json();
       if (data.success) {
-        setSuccessData({ numeroMembro: data.numeroMembro });
+        setNumeroMembroGerado(data.numeroMembro);
+        setSubmitted(true);
       } else {
-        setErrorMsg(data.error || 'Erro ao realizar cadastro.');
+        alert(data.error || 'Erro ao realizar cadastro.');
       }
-    } catch (err: any) {
-      setErrorMsg('Erro de conexão ao enviar formulário.');
+    } catch (err) {
+      alert('Erro de conexão ao salvar cadastro.');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#F6F9FC] text-[#0A2540] py-10 px-4">
-      <div className="max-w-3xl mx-auto space-y-8">
-        
-        {/* TOP BAR */}
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-xs font-bold text-brand-blue hover:underline flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Voltar ao Início
-          </Link>
-          <span className="text-xs font-bold text-slate-500">Igreja Assembleia de Deus</span>
-        </div>
-
-        {/* HEADER BRANDING */}
-        <div className="bg-white rounded-2xl p-8 border border-[#E6EBF1] shadow-stripe text-center space-y-4">
-          <div className="relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-brand-cyan shadow-md">
-            <Image src="/logo.jpg" alt="Logo Assembleia de Deus" fill className="object-cover" />
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-[#F6F9FC] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-lg w-full text-center space-y-6 border border-[#E6EBF1] shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+            <CheckCircle2 className="w-10 h-10" />
           </div>
 
-          <h1 className="text-3xl font-extrabold text-[#0A2540] tracking-tight">
+          <h1 className="text-2xl font-extrabold text-[#0A2540]">Cadastro realizado com sucesso!</h1>
+          
+          <div className="p-4 bg-[#F8FAFC] rounded-2xl border border-[#E6EBF1] space-y-2">
+            <span className="text-xs text-slate-500 font-bold uppercase">Seu Número de Membro</span>
+            <div className="text-3xl font-extrabold text-brand-blue font-mono">{numeroMembroGerado}</div>
+            <p className="text-xs text-slate-600 font-semibold">
+              Guarde este número para acessar sua Carteirinha Digital no Portal do Membro.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link 
+              href="/membro" 
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md hover:scale-105 transition-transform"
+            >
+              Ir para o Portal do Membro
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F6F9FC] py-12 px-4">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* HEADER FORM */}
+        <div className="text-center space-y-3">
+          <img 
+            src="/logo.jpg" 
+            alt="Logo Assembleia de Deus" 
+            className="w-16 h-16 rounded-2xl mx-auto shadow-md border border-[#E6EBF1] object-cover"
+          />
+          <h1 className="text-3xl font-extrabold text-[#0A2540]">
             Cadastro de Membro - Igreja Assembleia de Deus
           </h1>
-          <p className="text-slate-600 text-sm max-w-xl mx-auto">
-            Seja bem-vindo à nossa comunidade! Preencha as seções abaixo para oficializar seu cadastro no rol de membros.
+          <p className="text-xs text-[#425466] font-medium max-w-lg mx-auto">
+            Preencha todos os campos do formulário para o Rol de Membros da Igreja.
           </p>
         </div>
 
-        {/* POPUP DE SUCESSO */}
-        {successData && (
-          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-8 text-center space-y-4 shadow-stripe animate-fade-in">
-            <div className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-lg">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <h2 className="text-2xl font-extrabold text-emerald-900">Cadastro realizado com sucesso!</h2>
-            <p className="text-emerald-800 text-sm">
-              Suas informações foram salvas com segurança no sistema da igreja.
-            </p>
-            <div className="inline-block bg-white px-6 py-3 rounded-xl border border-emerald-200 shadow-sm font-mono font-bold text-lg text-emerald-900">
-              Número de Membro: <span className="text-brand-blue">{successData.numeroMembro}</span>
-            </div>
-            <div className="pt-4 flex justify-center gap-4">
-              <button 
-                onClick={() => { setSuccessData(null); window.location.reload(); }}
-                className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow hover:bg-emerald-700 transition-colors"
-              >
-                Cadastrar Outro Membro
-              </button>
-              <Link 
-                href="/dashboard/secretaria"
-                className="px-6 py-2.5 rounded-xl bg-white border border-emerald-300 text-emerald-900 font-bold text-xs hover:bg-emerald-100 transition-colors"
-              >
-                Ver na Secretaria Admin
-              </Link>
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-8 border border-[#E6EBF1] shadow-stripe space-y-8">
+          {/* FOTOS: CARTEIRINHA (OBRIGATÓRIA) E BANNER (OPCIONAL) */}
+          <div className="space-y-4 p-6 bg-slate-50 rounded-2xl border border-slate-200">
+            <h2 className="text-base font-extrabold text-[#0A2540] flex items-center gap-2">
+              <Camera className="w-5 h-5 text-brand-blue" /> Fotos do Membro
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* FOTO 3X4 CARTEIRINHA (OBRIGATÓRIA) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-extrabold text-[#0A2540]">
+                  1. Foto de Carteirinha * <span className="text-rose-600 font-bold">(OBRIGATÓRIA)</span>
+                </label>
+                <p className="text-[11px] text-slate-500 font-medium">Rosto nítido, de frente e fundo limpo (estilo 3x4).</p>
+
+                <div className="flex items-center gap-4">
+                  {form.fotoCarteirinha ? (
+                    <img src={form.fotoCarteirinha} alt="Foto Carteirinha" className="w-24 h-28 object-cover rounded-xl border border-brand-blue shadow-sm" />
+                  ) : (
+                    <div className="w-24 h-28 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                      <Camera className="w-8 h-8" />
+                      <span className="text-[10px] font-bold mt-1">3x4 Oblig.</span>
+                    </div>
+                  )}
+
+                  <label className="px-4 py-2.5 rounded-xl bg-white border border-[#E6EBF1] shadow-stripe-sm text-xs font-bold text-[#0A2540] hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-brand-blue" /> Selecionar Foto
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'fotoCarteirinha')} />
+                  </label>
+                </div>
+                {erroFoto && <p className="text-xs text-rose-600 font-bold mt-1">{erroFoto}</p>}
+              </div>
+
+              {/* FOTO DE BANNER (OPCIONAL) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-extrabold text-[#0A2540]">
+                  2. Foto de Banner <span className="text-slate-400 font-semibold">(OPCIONAL - pode ser enviada depois)</span>
+                </label>
+                <p className="text-[11px] text-slate-500 font-medium">Foto em formato horizontal para destaque no portal.</p>
+
+                <div className="flex items-center gap-4">
+                  {form.fotoBanner ? (
+                    <img src={form.fotoBanner} alt="Foto Banner" className="w-36 h-20 object-cover rounded-xl border border-emerald-500 shadow-sm" />
+                  ) : (
+                    <div className="w-36 h-20 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                      <ImageIcon className="w-6 h-6" />
+                      <span className="text-[10px] font-bold mt-1">Banner Opc.</span>
+                    </div>
+                  )}
+
+                  <label className="px-4 py-2.5 rounded-xl bg-white border border-[#E6EBF1] shadow-stripe-sm text-xs font-bold text-[#0A2540] hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-emerald-600" /> Enviar Banner
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'fotoBanner')} />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* MENSAGEM DE ERRO */}
-        {errorMsg && (
-          <div className="bg-rose-50 border border-rose-300 rounded-xl p-4 text-rose-800 text-xs font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+          {/* 1. DADOS PESSOAIS */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-extrabold text-[#0A2540] flex items-center gap-2 border-b pb-2">
+              <User className="w-5 h-5 text-brand-blue" /> 1. Dados Pessoais
+            </h2>
 
-        {!successData && (
-          <form onSubmit={handleSubmit} className="space-y-8">
-
-            {/* SEÇÃO 1: DADOS PESSOAIS */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E6EBF1]">
-                <User className="w-5 h-5 text-brand-blue" />
-                <h2 className="text-lg font-extrabold text-[#0A2540]">1. Dados Pessoais</h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome Completo *</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={form.nomeCompleto}
-                    onChange={(e) => setForm({ ...form, nomeCompleto: e.target.value })}
-                    placeholder="Digite o nome completo"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Data de Nascimento *</label>
-                  <input 
-                    type="date" 
-                    required
-                    value={form.dataNascimento}
-                    onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Sexo</label>
-                  <select 
-                    value={form.sexo}
-                    onChange={(e) => setForm({ ...form, sexo: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    <option value="Masculino">Masculino</option>
-                    <option value="Feminino">Feminino</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado Civil</label>
-                  <select 
-                    value={form.estadoCivil}
-                    onChange={(e) => setForm({ ...form, estadoCivil: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    <option value="Solteiro">Solteiro</option>
-                    <option value="Casado">Casado</option>
-                    <option value="Viúvo">Viúvo</option>
-                    <option value="Divorciado">Divorciado</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">CPF</label>
-                  <input 
-                    type="text" 
-                    value={form.cpf}
-                    onChange={(e) => setForm({ ...form, cpf: formatCPF(e.target.value) })}
-                    placeholder="000.000.000-00"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">RG</label>
-                  <input 
-                    type="text" 
-                    value={form.rg}
-                    onChange={(e) => setForm({ ...form, rg: e.target.value })}
-                    placeholder="Número do RG"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Telefone / WhatsApp</label>
-                  <input 
-                    type="text" 
-                    value={form.telefone}
-                    onChange={(e) => setForm({ ...form, telefone: formatTelefone(e.target.value) })}
-                    placeholder="(00) 00000-0000"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">E-mail</label>
-                  <input 
-                    type="email" 
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="exemplo@email.com"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Endereço</label>
-                  <input 
-                    type="text" 
-                    value={form.endereco}
-                    onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-                    placeholder="Rua, Avenida, Alameda..."
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Número</label>
-                  <input 
-                    type="text" 
-                    value={form.numero}
-                    onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                    placeholder="Nº"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Bairro</label>
-                  <input 
-                    type="text" 
-                    value={form.bairro}
-                    onChange={(e) => setForm({ ...form, bairro: e.target.value })}
-                    placeholder="Nome do bairro"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Cidade</label>
-                  <input 
-                    type="text" 
-                    value={form.cidade}
-                    onChange={(e) => setForm({ ...form, cidade: e.target.value })}
-                    placeholder="Cidade"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado</label>
-                  <select 
-                    value={form.estado}
-                    onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    {estadosBR.map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">CEP</label>
-                  <input 
-                    type="text" 
-                    value={form.cep}
-                    onChange={(e) => setForm({ ...form, cep: formatCEP(e.target.value) })}
-                    placeholder="00000-000"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SEÇÃO 2: INFORMAÇÕES FAMILIARES */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E6EBF1]">
-                <Heart className="w-5 h-5 text-rose-500" />
-                <h2 className="text-lg font-extrabold text-[#0A2540]">2. Informações Familiares</h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome do Pai</label>
-                  <input 
-                    type="text" 
-                    value={form.nomePai}
-                    onChange={(e) => setForm({ ...form, nomePai: e.target.value })}
-                    placeholder="Nome do pai"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome da Mãe</label>
-                  <input 
-                    type="text" 
-                    value={form.nomeMae}
-                    onChange={(e) => setForm({ ...form, nomeMae: e.target.value })}
-                    placeholder="Nome da mãe"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome do Cônjuge (se casado)</label>
-                  <input 
-                    type="text" 
-                    value={form.nomeConjuge}
-                    onChange={(e) => setForm({ ...form, nomeConjuge: e.target.value })}
-                    placeholder="Nome do cônjuge"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-              </div>
-
-              {/* LISTA DINÂMICA DE FILHOS */}
-              <div className="space-y-4 pt-2 border-t border-[#E6EBF1]">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#0A2540]">Filhos</span>
-                  <button 
-                    type="button" 
-                    onClick={handleAddFilho}
-                    className="text-xs font-bold text-brand-blue hover:underline flex items-center gap-1"
-                  >
-                    <Plus className="w-4 h-4" /> Adicionar Filho(a)
-                  </button>
-                </div>
-
-                {form.filhos.map((filho, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-[#F8FAFC] p-3 rounded-xl border border-[#E6EBF1]">
-                    <input 
-                      type="text" 
-                      placeholder="Nome do filho(a)"
-                      value={filho.nome}
-                      onChange={(e) => {
-                        const newFilhos = [...form.filhos];
-                        newFilhos[idx].nome = e.target.value;
-                        setForm({ ...form, filhos: newFilhos });
-                      }}
-                      className="flex-1 h-9 px-3 rounded-lg border border-[#E6EBF1] bg-white text-xs"
-                    />
-                    <input 
-                      type="number" 
-                      placeholder="Idade"
-                      value={filho.idade}
-                      onChange={(e) => {
-                        const newFilhos = [...form.filhos];
-                        newFilhos[idx].idade = e.target.value;
-                        setForm({ ...form, filhos: newFilhos });
-                      }}
-                      className="w-20 h-9 px-3 rounded-lg border border-[#E6EBF1] bg-white text-xs"
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => handleRemoveFilho(idx)}
-                      className="p-2 text-rose-500 hover:text-rose-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* SEÇÃO 3: INFORMAÇÕES ESPIRITUAIS */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E6EBF1]">
-                <BookOpen className="w-5 h-5 text-brand-cyan" />
-                <h2 className="text-lg font-extrabold text-[#0A2540]">3. Informações Espirituais</h2>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Data em que aceitou Jesus</label>
-                  <input 
-                    type="date" 
-                    value={form.dataConversao}
-                    onChange={(e) => setForm({ ...form, dataConversao: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Foi batizado nas águas?</label>
-                  <select 
-                    value={form.batizadoAguas}
-                    onChange={(e) => setForm({ ...form, batizadoAguas: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    <option value="Não">Não</option>
-                    <option value="Sim">Sim</option>
-                  </select>
-                </div>
-
-                {form.batizadoAguas === 'Sim' && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Data do Batismo</label>
-                      <input 
-                        type="date" 
-                        value={form.dataBatismo}
-                        onChange={(e) => setForm({ ...form, dataBatismo: e.target.value })}
-                        className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Igreja onde foi batizado</label>
-                      <input 
-                        type="text" 
-                        value={form.igrejaBatismo}
-                        onChange={(e) => setForm({ ...form, igrejaBatismo: e.target.value })}
-                        placeholder="Nome da igreja"
-                        className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                      />
-                    </div>
-                  </>
-                )}
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Recebeu o batismo com o Espírito Santo?</label>
-                  <select 
-                    value={form.batismoEspiritoSanto}
-                    onChange={(e) => setForm({ ...form, batismoEspiritoSanto: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    <option value="Não">Não</option>
-                    <option value="Sim">Sim</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Veio de outra congregação?</label>
-                  <select 
-                    value={form.veioOutraIgreja}
-                    onChange={(e) => setForm({ ...form, veioOutraIgreja: e.target.value })}
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  >
-                    <option value="Não">Não</option>
-                    <option value="Sim">Sim</option>
-                  </select>
-                </div>
-
-                {form.veioOutraIgreja === 'Sim' && (
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Congregação Anterior</label>
-                    <input 
-                      type="text" 
-                      value={form.igrejaAnterior}
-                      onChange={(e) => setForm({ ...form, igrejaAnterior: e.target.value })}
-                      placeholder="Nome da congregação anterior"
-                      className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* SEÇÃO 4: PARTICIPAÇÃO NA IGREJA */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-6">
-              <div className="flex items-center gap-2 pb-3 border-b border-[#E6EBF1]">
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                <h2 className="text-lg font-extrabold text-[#0A2540]">4. Participação na Igreja</h2>
-              </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-3">Ministérios que deseja participar (Seleção Múltipla):</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {listaMinisterios.map((min) => (
-                    <label 
-                      key={min}
-                      className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2.5 cursor-pointer transition-all ${
-                        form.ministerios.includes(min)
-                          ? 'bg-blue-50 border-brand-blue text-brand-blue shadow-sm'
-                          : 'bg-[#F8FAFC] border-[#E6EBF1] text-slate-700 hover:border-slate-300'
-                      }`}
-                    >
-                      <input 
-                        type="checkbox"
-                        checked={form.ministerios.includes(min)}
-                        onChange={() => handleMinisterioToggle(min)}
-                        className="rounded text-brand-blue focus:ring-0"
-                      />
-                      <span>{min}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Talentos, habilidades ou áreas onde deseja servir</label>
-                <textarea 
-                  rows={3}
-                  value={form.talentos}
-                  onChange={(e) => setForm({ ...form, talentos: e.target.value })}
-                  placeholder="Ex: Toco violão, canto, experiência com som, ensino de crianças, ornamentação..."
-                  className="w-full p-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                />
-              </div>
-            </div>
-
-            {/* SEÇÃO 5: INFORMAÇÕES ADICIONAIS */}
-            <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-6">
-              <h2 className="text-lg font-extrabold text-[#0A2540] pb-3 border-b border-[#E6EBF1]">5. Informações Adicionais</h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Necessidades especiais ou observações</label>
-                  <textarea 
-                    rows={2}
-                    value={form.necessidadesEspeciais}
-                    onChange={(e) => setForm({ ...form, necessidadesEspeciais: e.target.value })}
-                    placeholder="Informações de saúde, restrições ou observações relevantes..."
-                    className="w-full p-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Contato de Emergência</label>
-                  <input 
-                    type="text" 
-                    value={form.contatoEmergencia}
-                    onChange={(e) => setForm({ ...form, contatoEmergencia: e.target.value })}
-                    placeholder="Nome do contato"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Telefone de Emergência</label>
-                  <input 
-                    type="text" 
-                    value={form.telefoneEmergencia}
-                    onChange={(e) => setForm({ ...form, telefoneEmergencia: formatTelefone(e.target.value) })}
-                    placeholder="(00) 00000-0000"
-                    className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-sm focus:outline-none focus:border-brand-blue"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* SEÇÃO 6: TERMO DE COMPROMISSO */}
-            <div className="bg-white rounded-2xl p-6 border-2 border-brand-blue/30 shadow-stripe space-y-4">
-              <h2 className="text-lg font-extrabold text-[#0A2540]">6. Termo de Compromisso</h2>
-
-              <label className="p-4 rounded-xl bg-blue-50/50 border border-blue-200 flex items-start gap-3 cursor-pointer">
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">Nome Completo *</label>
                 <input 
-                  type="checkbox"
+                  type="text" 
                   required
-                  checked={form.termoCompromisso}
-                  onChange={(e) => setForm({ ...form, termoCompromisso: e.target.checked })}
-                  className="mt-1 rounded text-brand-blue focus:ring-0 w-4 h-4"
+                  value={form.nomeCompleto}
+                  onChange={(e) => setForm({ ...form, nomeCompleto: e.target.value })}
+                  placeholder="Nome completo do membro"
+                  className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold focus:outline-none focus:border-brand-blue"
                 />
-                <span className="text-xs font-bold text-[#0A2540] leading-relaxed">
-                  Declaro que as informações fornecidas são verdadeiras e desejo fazer parte da comunhão da Igreja Assembleia de Deus.
-                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">Data de Nascimento *</label>
+                <input 
+                  type="date" 
+                  required
+                  value={form.dataNascimento}
+                  onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
+                  className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">Sexo *</label>
+                <select 
+                  value={form.sexo}
+                  onChange={(e) => setForm({ ...form, sexo: e.target.value })}
+                  className="w-full h-11 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
+                >
+                  <option value="Masculino">Masculino</option>
+                  <option value="Feminino">Feminino</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">Estado Civil *</label>
+                <select 
+                  value={form.estadoCivil}
+                  onChange={(e) => setForm({ ...form, estadoCivil: e.target.value })}
+                  className="w-full h-11 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
+                >
+                  <option value="Solteiro">Solteiro</option>
+                  <option value="Casado">Casado</option>
+                  <option value="Viúvo">Viúvo</option>
+                  <option value="Divorciado">Divorciado</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">CPF</label>
+                <input 
+                  type="text" 
+                  value={form.cpf}
+                  onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
+                  className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#0A2540] mb-1">Telefone / WhatsApp</label>
+                <input 
+                  type="text" 
+                  value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                  className="w-full h-11 px-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 6. TERMO DE COMPROMISSO */}
+          <div className="pt-4 border-t border-[#E6EBF1] space-y-4">
+            <div className="flex items-start gap-3">
+              <input 
+                type="checkbox" 
+                id="termo"
+                checked={form.termoCompromisso}
+                onChange={(e) => setForm({ ...form, termoCompromisso: e.target.checked })}
+                className="mt-1 w-4 h-4 accent-brand-blue rounded"
+              />
+              <label htmlFor="termo" className="text-xs text-[#425466] font-medium leading-relaxed">
+                Declaro que as informações acima são verdadeiras e estou ciente do compromisso de comunhão e respeito à fé da Igreja Assembleia de Deus.
               </label>
             </div>
 
-            {/* SUBMIT BUTTON */}
             <button 
-              type="submit"
+              type="submit" 
               disabled={loading}
-              className="w-full py-4 rounded-2xl bg-flame-gradient text-white font-extrabold text-base shadow-lg shadow-brand-cyan/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl bg-flame-gradient text-white font-extrabold text-sm shadow-lg hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer"
             >
-              {loading ? 'Cadastrando no banco...' : 'Enviar Cadastro'} <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" /> 
+              {loading ? 'Enviando Cadastro...' : 'Enviar Cadastro com Foto de Carteirinha'}
             </button>
-
-          </form>
-        )}
+          </div>
+        </form>
       </div>
     </div>
   );
