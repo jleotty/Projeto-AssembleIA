@@ -41,13 +41,13 @@ export async function GET() {
     }
 
     const agendamentos = await db.statusWhatsapp.findMany({
-      orderBy: { dataAgendada: 'asc' },
-      take: 30,
+      orderBy: { dataAgendada: 'desc' },
+      take: 50,
     });
 
     const escalas = await db.escalaAgendada.findMany({
-      orderBy: { dataEscala: 'asc' },
-      take: 30,
+      orderBy: { dataEscala: 'desc' },
+      take: 50,
     });
 
     return NextResponse.json({
@@ -76,11 +76,18 @@ export async function POST(request: Request) {
 
     // 1. Agendar ou Disparar Status com Foto de Banner / Mídia
     if (action === 'SCHEDULE_STATUS' || action === 'SEND_STATUS') {
-      const mediaUrl = body.mediaBase64 || body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
+      const rawMedia = body.mediaBase64 || body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
+      
+      // EVOLUTION API REQUER BASE64 PURO SEM A PREFIXA 'data:image/...;base64,'
+      let cleanMedia = rawMedia;
+      if (cleanMedia.includes('base64,')) {
+        cleanMedia = cleanMedia.split('base64,')[1];
+      }
+
       const captionText = body.legenda ? `${body.titulo}\n\n${body.legenda}` : body.titulo || 'Comunicado Oficial AssembleIA';
       const targetNumber = (body.number || '555195419525').replace(/\D/g, '');
 
-      // DISPARO IMEDIATO VIA EVOLUTION API COM PAYLOAD FLAT CORRETO
+      // DISPARO IMEDIATO VIA EVOLUTION API COM BASE64 PURO
       let evolutionSuccess = false;
       let evolutionResponse = null;
 
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             number: targetNumber,
-            media: mediaUrl,
+            media: cleanMedia,
             mediatype: 'image',
             caption: captionText,
           }),
@@ -102,15 +109,15 @@ export async function POST(request: Request) {
         evolutionResponse = await evoRes.json();
         evolutionSuccess = evoRes.ok && (evoRes.status === 200 || evoRes.status === 201);
       } catch (err: any) {
-        console.error('Erro ao chamar Evolution API sendMedia:', err);
+        console.error('Erro ao disparar via Evolution API:', err);
       }
 
-      // GRAVAR RECORD NO BANCO SQLITE
+      // SALVAR RECORD NO SQLITE
       const statusObj = await db.statusWhatsapp.create({
         data: {
           titulo: body.titulo || 'Aviso Recorrente da Igreja',
           tipoMedia: 'IMAGEM_BANNER',
-          mediaUrl: mediaUrl,
+          mediaUrl: rawMedia,
           legenda: captionText,
           dataAgendada: body.dataAgendada ? new Date(body.dataAgendada) : new Date(),
           recorrencia: body.recorrencia || 'DIARIA',
@@ -123,8 +130,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ 
         success: true, 
         message: evolutionSuccess 
-          ? `Status e anexo de mídia disparados com sucesso no WhatsApp (${targetNumber})!`
-          : `Agendamento salvo no banco. Status Evolution API: ${JSON.stringify(evolutionResponse)}`,
+          ? `Status e foto de banner enviados com sucesso no WhatsApp (${targetNumber})!`
+          : `Agendamento criado! Tentativa Evolution API: ${JSON.stringify(evolutionResponse)}`,
         statusObj,
         evolutionResponse
       });
@@ -166,6 +173,29 @@ export async function POST(request: Request) {
 
     const data = await res.json();
     return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// DELETE /api/whatsapp — Cancelar/Deletar Agendamentos
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const type = searchParams.get('type') || 'status';
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID do agendamento é obrigatório.' }, { status: 400 });
+    }
+
+    if (type === 'escala') {
+      await db.escalaAgendada.delete({ where: { id: parseInt(id, 10) } });
+    } else {
+      await db.statusWhatsapp.delete({ where: { id: parseInt(id, 10) } });
+    }
+
+    return NextResponse.json({ success: true, message: 'Agendamento cancelado com sucesso!' });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

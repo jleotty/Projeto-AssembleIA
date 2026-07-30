@@ -13,12 +13,14 @@ import {
   Plus,
   Upload,
   Repeat,
-  X
+  X,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 
 export default function WhatsAppSyncPage() {
   const [loading, setLoading] = useState(true);
-  const [statusData, setStatusData] = useState<any>({});
+  const [statusData, setStatusData] = useState<any>({ agendamentos: [], escalas: [] });
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState('Paz do Senhor! Notificação oficial AssembleIA.');
   const [sending, setSending] = useState(false);
@@ -119,6 +121,23 @@ export default function WhatsAppSyncPage() {
     }
   };
 
+  const handleCancelAgendamento = async (id: number, titulo: string) => {
+    if (!confirm(`Deseja cancelar e remover o agendamento "${titulo}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/whatsapp?id=${id}&type=status`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        alert('Agendamento cancelado com sucesso!');
+        checkWhatsAppStatus();
+      } else {
+        alert(data.error || 'Erro ao cancelar agendamento.');
+      }
+    } catch (e) {
+      alert('Erro de conexão ao cancelar agendamento.');
+    }
+  };
+
   const isConnected = statusData.state === 'open';
 
   return (
@@ -128,7 +147,7 @@ export default function WhatsAppSyncPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-extrabold text-[#0A2540] flex items-center gap-2">
-              <Repeat className="w-6 h-6 text-purple-600" /> Automação com Recorrência (Diário, Semanal, Mensal)
+              <Repeat className="w-6 h-6 text-purple-600" /> Automação com Recorrência & Status WhatsApp
             </h1>
             <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
               isConnected ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'
@@ -137,7 +156,7 @@ export default function WhatsAppSyncPage() {
             </span>
           </div>
           <p className="text-xs text-[#425466] mt-1 font-semibold">
-            Agende envios automáticos recorrentes com controle de frequência diária no WhatsApp.
+            Agende envios automáticos recorrentes, gerencie postagens e cancele agendamentos a qualquer momento.
           </p>
         </div>
 
@@ -328,6 +347,86 @@ export default function WhatsAppSyncPage() {
               <Send className="w-4 h-4" /> Ativar Automação Recorrente no WhatsApp
             </button>
           </form>
+        </div>
+      </div>
+
+      {/* SEÇÃO NOVO GERENCIAMENTO DE AGENDAMENTOS GERADOS COM BOTÃO DE CANCELAR */}
+      <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E6EBF1]">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-brand-blue" />
+            <h3 className="text-base font-extrabold text-[#0A2540]">Agendamentos Recorrentes Ativos</h3>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-extrabold border border-blue-200">
+            {statusData.agendamentos?.length || 0} Registros no SQLite
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-extrabold uppercase">
+                <th className="py-3 px-4">Banner</th>
+                <th className="py-3 px-4">Título & Legenda</th>
+                <th className="py-3 px-4">Recorrência</th>
+                <th className="py-3 px-4">Frequência</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E6EBF1]">
+              {!statusData.agendamentos || statusData.agendamentos.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-slate-400 font-bold">
+                    Nenhum agendamento ativo encontrado.
+                  </td>
+                </tr>
+              ) : (
+                statusData.agendamentos.map((item: any) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-4">
+                      {item.mediaUrl?.startsWith('data:image') ? (
+                        <img src={item.mediaUrl} alt="Banner" className="w-14 h-10 object-cover rounded-lg border border-slate-200 shadow-sm" />
+                      ) : (
+                        <div className="w-14 h-10 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                          <ImageIcon className="w-4 h-4" />
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="font-extrabold text-[#0A2540] block">{item.titulo}</span>
+                      <span className="text-[11px] text-slate-500 block truncate max-w-xs">{item.legenda}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 font-extrabold border border-purple-200 text-[10px]">
+                        {item.recorrencia}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-bold text-slate-600">
+                      {item.frequenciaDia}x ao dia
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                        item.status === 'ENVIADO' 
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button 
+                        onClick={() => handleCancelAgendamento(item.id, item.titulo)}
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Cancelar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
