@@ -16,9 +16,7 @@ import {
   User,
   Heart,
   BookOpen,
-  Sparkles,
-  Send,
-  Plus
+  Sparkles
 } from 'lucide-react';
 
 export default function SecretariaMembrosPage() {
@@ -29,7 +27,7 @@ export default function SecretariaMembrosPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  // Modal de Cadastro Completo (Com todos os campos da Visão Geral/Pública)
+  // Modal de Cadastro Completo
   const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
   const [carteiraModalOpen, setCarteiraModalOpen] = useState<any>(null);
 
@@ -70,7 +68,6 @@ export default function SecretariaMembrosPage() {
     telefoneEmergencia: '',
   });
 
-  const [novoFilho, setNovoFilho] = useState({ nome: '', idade: '' });
   const [erroFoto, setErroFoto] = useState('');
 
   const fetchMembros = async (p = 1, q = '') => {
@@ -111,15 +108,6 @@ export default function SecretariaMembrosPage() {
     }
   };
 
-  const handleAddFilho = () => {
-    if (!novoFilho.nome) return;
-    setForm(prev => ({
-      ...prev,
-      filhos: [...prev.filhos, novoFilho]
-    }));
-    setNovoFilho({ nome: '', idade: '' });
-  };
-
   const handleToggleMinisterio = (ministerio: string) => {
     setForm(prev => ({
       ...prev,
@@ -147,6 +135,41 @@ export default function SecretariaMembrosPage() {
       if (data.success) {
         alert(`Membro ${form.nomeCompleto} cadastrado com sucesso! Nº Registro: ${data.numeroMembro}.`);
         setModalCadastroOpen(false);
+        setForm({
+          nomeCompleto: '',
+          dataNascimento: '',
+          sexo: 'Masculino',
+          estadoCivil: 'Solteiro',
+          cpf: '',
+          rg: '',
+          telefone: '',
+          email: '',
+          endereco: '',
+          numero: '',
+          bairro: '',
+          cidade: 'São Paulo',
+          estado: 'SP',
+          cep: '',
+          fotoCarteirinha: '',
+          fotoBanner: '',
+          nomePai: '',
+          nomeMae: '',
+          nomeConjuge: '',
+          quantidadeFilhos: '0',
+          filhos: [],
+          dataConversao: '',
+          batizadoAguas: 'Não',
+          dataBatismo: '',
+          igrejaBatismo: '',
+          batismoEspiritoSanto: 'Não',
+          veioOutraIgreja: 'Não',
+          igrejaAnterior: '',
+          ministerios: [],
+          talentos: '',
+          necessidadesEspeciais: '',
+          contatoEmergencia: '',
+          telefoneEmergencia: '',
+        });
         fetchMembros(1, search);
       } else {
         alert(data.error || 'Erro ao cadastrar membro.');
@@ -183,7 +206,7 @@ export default function SecretariaMembrosPage() {
             </span>
           </div>
           <p className="text-xs text-[#425466] mt-1 font-semibold">
-            Cadastro completo em 6 seções com emissão imediata da carteira digital e QR Code único.
+            Central única para emissão de carteirinhas com QR Code único e gerenciamento do rol oficial.
           </p>
         </div>
 
@@ -191,7 +214,7 @@ export default function SecretariaMembrosPage() {
           onClick={() => setModalCadastroOpen(true)}
           className="px-6 py-3 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
         >
-          <UserPlus className="w-4 h-4" /> Cadastrar Novo Membro (Formulário Completo)
+          <UserPlus className="w-4 h-4" /> Cadastrar Membro
         </button>
       </div>
 
@@ -293,16 +316,16 @@ export default function SecretariaMembrosPage() {
         </div>
       </div>
 
-      {/* MODAL DE CADASTRO COMPLETO (6 SEÇÕES ORGANIZADAS DA VISÃO GERAL/PÚBLICA) */}
+      {/* MODAL DE CADASTRO COMPLETO */}
       {modalCadastroOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-4xl w-full border border-[#E6EBF1] shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-3">
               <div>
                 <h3 className="text-xl font-extrabold text-[#0A2540] flex items-center gap-2">
-                  <UserPlus className="w-6 h-6 text-brand-blue" /> Formulário Completo de Cadastro de Membro
+                  <UserPlus className="w-6 h-6 text-brand-blue" /> Formulário de Cadastro de Membro
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">Preencha as seções completas para salvar no SQLite.</p>
+                <p className="text-xs text-slate-500 font-medium">Preencha as seções para cadastrar o membro no SQLite.</p>
               </div>
               <button onClick={() => setModalCadastroOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-6 h-6" />
@@ -396,7 +419,7 @@ export default function SecretariaMembrosPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-bold text-[#0A2540] mb-1">CPF</label>
+                    <label className="block font-bold text-[#0A2540] mb-1">CPF (Opcional)</label>
                     <input type="text" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} placeholder="000.000.000-00" className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold" />
                   </div>
                   <div>
@@ -471,8 +494,12 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
-              <button type="submit" className="w-full py-4 rounded-xl bg-flame-gradient text-white text-sm font-extrabold shadow-lg hover:scale-[1.01] transition-transform">
-                Salvar Cadastro Completo com Foto 3x4 & QR Code Único
+              {/* BOTÃO NOMEADO EXATAMENTE: "Cadastrar Membro" */}
+              <button 
+                type="submit" 
+                className="w-full py-4 rounded-xl bg-flame-gradient text-white text-sm font-extrabold shadow-lg hover:scale-[1.01] transition-transform cursor-pointer flex items-center justify-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" /> Cadastrar Membro
               </button>
             </form>
           </div>

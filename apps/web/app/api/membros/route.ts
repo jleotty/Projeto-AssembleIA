@@ -60,6 +60,21 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Tratar CPF: Se for string vazia ou apenas espaços, converter para null
+    const cleanCpf = body.cpf && body.cpf.trim() !== '' ? body.cpf.trim() : null;
+
+    if (cleanCpf) {
+      const cpfExistente = await db.membro.findUnique({
+        where: { cpf: cleanCpf }
+      });
+      if (cpfExistente) {
+        return NextResponse.json({
+          success: false,
+          error: `O CPF ${cleanCpf} já está cadastrado para o membro ${cpfExistente.nomeCompleto}.`,
+        }, { status: 400 });
+      }
+    }
+
     // Gerar número de membro único ex: AD-2026-0042
     const totalCount = await db.membro.count();
     const numeroMembro = `AD-${new Date().getFullYear()}-${String(totalCount + 1).padStart(4, '0')}`;
@@ -76,8 +91,8 @@ export async function POST(request: Request) {
         dataNascimento: body.dataNascimento ? new Date(body.dataNascimento) : null,
         sexo: body.sexo,
         estadoCivil: body.estadoCivil,
-        cpf: body.cpf || null,
-        rg: body.rg || null,
+        cpf: cleanCpf, // null se for vazio
+        rg: body.rg && body.rg.trim() !== '' ? body.rg.trim() : null,
         telefone: body.telefone || null,
         whatsapp: body.whatsapp || body.telefone || null,
         email: body.email || null,
@@ -119,8 +134,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // REGRA 3: QR Code Único por Carteirinha
-    // Gerar QR Code único com link de verificação oficial da carteira do membro
+    // QR Code Único por Carteirinha
     const qrCodeContent = `https://assembleia.com/verificar-carteira?membroId=${novoMembro.id}&numero=${numeroMembro}`;
 
     await db.carteirinha.create({
@@ -130,7 +144,7 @@ export async function POST(request: Request) {
         dataEmissao: new Date(),
         validade: new Date(new Date().setFullYear(new Date().getFullYear() + 5)),
         arquivo: `carteirinhas/${numeroMembro}.png`,
-        qrCode: qrCodeContent, // QR Code único salvo no banco de dados
+        qrCode: qrCodeContent,
       },
     });
 
@@ -205,13 +219,14 @@ export async function POST(request: Request) {
       },
     });
 
-    // Histórico Inicial
+    // Histórico Inicial (Verificar se existe usuarioId para não violar foreign key constraint)
+    const adminUser = await db.usuario.findFirst();
     await db.historicoMembro.create({
       data: {
         membroId: novoMembro.id,
-        usuarioId: 1,
+        usuarioId: adminUser?.id || null,
         acao: 'Abertura de cadastro',
-        descricao: 'Membro cadastrado com foto vinculada diretamente a carteirinha e QR Code unico gerado',
+        descricao: 'Membro cadastrado com foto e carteirinha gerada',
       },
     });
 
