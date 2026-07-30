@@ -17,7 +17,10 @@ import {
   Heart,
   BookOpen,
   Sparkles,
-  Save
+  Save,
+  CheckCircle,
+  Share2,
+  Download
 } from 'lucide-react';
 
 export default function SecretariaMembrosPage() {
@@ -507,46 +510,80 @@ export default function SecretariaMembrosPage() {
         </div>
       )}
 
-      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL */}
+      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL ULTRA MODERNA */}
       {carteiraModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative">
-            <button onClick={() => setCarteiraModalOpen(null)} className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative overflow-hidden">
+            <button onClick={() => setCarteiraModalOpen(null)} className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white z-20">
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-              <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-xl object-cover border border-white/20" />
-              <div>
-                <h3 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Igreja Assembleia de Deus</h3>
-                <p className="text-[10px] text-slate-300 font-semibold">{carteiraModalOpen.congregacao?.nome || 'Sede Central'}</p>
+            {/* GRADIENTE DE BRILHO */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-400/20 via-blue-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+
+            {/* CABEÇALHO */}
+            <div className="flex items-start justify-between relative z-10 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <img src="/logo.jpg" alt="Logo AD" className="w-11 h-11 rounded-2xl object-cover border-2 border-white/30 shadow" />
+                <div>
+                  <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">Igreja Assembleia de Deus</h3>
+                  <p className="text-[10px] text-cyan-300 font-semibold">{carteiraModalOpen.congregacao?.nome || 'Sede Central'}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-extrabold uppercase">
+                <CheckCircle className="w-3 h-3" /> ATIVO
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <img src={carteiraModalOpen.fotoRosto} alt="Foto Carteira" className="w-24 h-28 object-cover rounded-xl border-2 border-amber-400 shadow" />
-              <div className="space-y-2 text-xs flex-1">
-                <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Nome do Membro</span>
-                  <span className="font-extrabold text-sm text-white block leading-tight">{carteiraModalOpen.nomeCompleto}</span>
+            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE GRANDE */}
+            <div className="grid grid-cols-12 gap-3 items-center relative z-10">
+              <div className="col-span-8 flex items-center gap-3">
+                <img 
+                  src={carteiraModalOpen.fotoRosto} 
+                  alt="Foto Carteira" 
+                  className="w-18 h-22 object-cover rounded-2xl border-2 border-white/40 shadow-lg flex-shrink-0" 
+                />
+                <div className="space-y-1.5 overflow-hidden">
+                  <div>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
+                    <span className="font-extrabold text-xs text-white block truncate leading-tight uppercase">{carteiraModalOpen.nomeCompleto}</span>
+                  </div>
+                  <div>
+                    <span className="text-[8px] text-slate-400 font-bold uppercase block">REGISTRO</span>
+                    <span className="font-mono font-extrabold text-cyan-300 text-xs">#{carteiraModalOpen.numeroMembro || carteiraModalOpen.id}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Nº de Registro</span>
-                  <span className="font-mono font-extrabold text-amber-400 text-xs">#{carteiraModalOpen.numeroMembro || carteiraModalOpen.id}</span>
+              </div>
+
+              {/* QR CODE COM BORDA ARREDONDADA (DIREITA) */}
+              <div className="col-span-4 flex flex-col items-center justify-center">
+                <div className="bg-white p-2 rounded-2xl shadow-xl border-2 border-white/20">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(carteiraModalOpen.qrCodeStr)}`} 
+                    alt="QR Code Carteira" 
+                    className="w-16 h-16 object-contain" 
+                  />
                 </div>
+                <span className="text-[8px] text-cyan-200 font-bold uppercase mt-1 text-center">QR CODE ÚNICO</span>
               </div>
             </div>
 
-            <div className="bg-white/10 rounded-2xl p-3 border border-white/10 flex items-center justify-between gap-3">
-              <div className="space-y-1">
-                <span className="text-[10px] text-amber-400 font-extrabold uppercase flex items-center gap-1">
-                  <QrCodeIcon className="w-3.5 h-3.5" /> QR Code Único de Autenticidade
-                </span>
-                <p className="text-[9px] text-slate-300">Gerado automaticamente para a carteira deste membro.</p>
-              </div>
-              <div className="bg-white p-1 rounded-xl shadow-md flex-shrink-0">
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(carteiraModalOpen.qrCodeStr)}`} alt="QR Code" className="w-16 h-16 object-contain" />
-              </div>
+            {/* BOTÕES DE AÇÃO IGUAL AO MODELO */}
+            <div className="space-y-2 pt-2 relative z-10">
+              <button 
+                onClick={() => alert('Link da carteirinha copiado!')}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#0A2540] via-[#635BFF] to-[#0A2540] text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Compartilhar carteirinha
+              </button>
+
+              <button 
+                onClick={() => window.print()}
+                className="w-full py-3 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] font-extrabold text-xs shadow-sm hover:bg-slate-50 flex items-center justify-center gap-2"
+              >
+                <Download className="w-3.5 h-3.5 text-brand-blue" /> Salvar na galeria
+              </button>
             </div>
           </div>
         </div>
