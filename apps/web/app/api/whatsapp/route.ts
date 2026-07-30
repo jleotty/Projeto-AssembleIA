@@ -4,9 +4,8 @@ import { db } from '@assembleia/db';
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'Jaera@2020';
 const INSTANCE_NAME = 'assembleia_whatsapp';
-const HF_TOKEN = process.env.HF_TOKEN || '';
 
-// GET /api/whatsapp — Obtém status da conexão WhatsApp, QR Code e agendamentos de status com mídia
+// GET /api/whatsapp — Obtém status da conexão, agendamentos recorrentes de status e escalas
 export async function GET() {
   try {
     const headers = {
@@ -43,12 +42,12 @@ export async function GET() {
 
     const agendamentos = await db.statusWhatsapp.findMany({
       orderBy: { dataAgendada: 'asc' },
-      take: 20,
+      take: 30,
     });
 
     const escalas = await db.escalaAgendada.findMany({
       orderBy: { dataEscala: 'asc' },
-      take: 20,
+      take: 30,
     });
 
     return NextResponse.json({
@@ -59,7 +58,6 @@ export async function GET() {
       pairingCode,
       agendamentos,
       escalas,
-      hfModel: 'meta-llama/Llama-3.1-8B-Instruct',
     });
   } catch (error: any) {
     return NextResponse.json({
@@ -70,28 +68,31 @@ export async function GET() {
   }
 }
 
-// POST /api/whatsapp — Envio de mensagens, agendamento de status com ANEXO DE MÍDIA FÍSICA e resposta IA Hugging Face
+// POST /api/whatsapp — Envio e Agendamento Recorrente (Diário, Semanal, Mensal, Anual, Frequência no dia)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const action = body.action || 'SEND_TEXT';
 
-    // 1. Agendar Status (Texto + ANEXO FÍSICO DE MÍDIA/BANNER)
+    // 1. Agendar Status Recorrente (Diário, Semanal, Mensal, Anual + Mídia)
     if (action === 'SCHEDULE_STATUS') {
-      const mediaUrl = body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
+      const mediaUrl = body.mediaBase64 || body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
       
       const statusObj = await db.statusWhatsapp.create({
         data: {
-          titulo: body.titulo || 'Aviso com Banner de Membro',
+          titulo: body.titulo || 'Aviso Recorrente da Igreja',
           tipoMedia: 'IMAGEM_BANNER',
           mediaUrl: mediaUrl,
           legenda: body.legenda || body.text || '',
           dataAgendada: body.dataAgendada ? new Date(body.dataAgendada) : new Date(),
-          status: 'ENVIADO',
+          recorrencia: body.recorrencia || 'UNICA', // UNICA, DIARIA, SEMANAL, MENSAL, ANUAL
+          frequenciaDia: parseInt(body.frequenciaDia || '1', 10),
+          diasSemana: Array.isArray(body.diasSemana) ? body.diasSemana.join(',') : (body.diasSemana || 'DOMINGO'),
+          status: 'PENDENTE',
         },
       });
 
-      // Disparar anexo físico de imagem de banner via Evolution API
+      // Disparar anexo físico se número especificado
       if (body.number) {
         await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${INSTANCE_NAME}`, {
           method: 'POST',
@@ -112,46 +113,32 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ 
         success: true, 
-        message: 'Status com anexo de foto de banner postado e agendado com sucesso!', 
+        message: `Automação Recorrente (${statusObj.recorrencia} - ${statusObj.frequenciaDia}x/dia) agendada com sucesso!`, 
         statusObj 
       });
     }
 
-    // 2. Resposta via Agente Hugging Face (Llama-3.1-8B / Zephyr-7b)
-    if (action === 'HF_AI_REPLY') {
-      const prompt = body.text || 'Olá, qual a programação da igreja?';
-      const promptLower = prompt.lower?.() || prompt.toLowerCase();
+    // 2. Agendar Escala Recorrente (Diária, Semanal, Mensal)
+    if (action === 'SCHEDULE_ESCALA') {
+      const escalaObj = await db.escalaAgendada.create({
+        data: {
+          departamento: body.departamento || 'Louvor',
+          dataEscala: body.dataEscala ? new Date(body.dataEscala) : new Date(),
+          conteudo: body.conteudo || 'Escala oficial de voluntários',
+          recorrencia: body.recorrencia || 'SEMANAL',
+          frequenciaDia: parseInt(body.frequenciaDia || '1', 10),
+          enviada: 0,
+        },
+      });
 
-      let aiResponse = 'No momento não consigo processar. Tente novamente.';
-
-      if (promptLower.includes('membro') || promptLower.includes('cadastro')) {
-        const count = await db.membro.count();
-        aiResponse = `O Rol de Membros da Igreja possui ${count} membros cadastrados no SQLite.`;
-      } else if (promptLower.includes('saldo') || promptLower.includes('financeiro')) {
-        aiResponse = 'O saldo da conta Sicredi possui R$ 49.269,50 auditados no SQLite.';
-      } else if (promptLower.includes('escala')) {
-        aiResponse = 'Escala confirmada para o próximo culto. Voluntários notificados.';
-      }
-
-      // Se houver número de destino, envia a resposta de volta pelo WhatsApp
-      if (body.number) {
-        await fetch(`${EVOLUTION_API_URL}/message/sendText/${INSTANCE_NAME}`, {
-          method: 'POST',
-          headers: {
-            'apikey': EVOLUTION_API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            number: body.number.replace(/\D/g, ''),
-            text: aiResponse,
-          }),
-        }).catch(() => null);
-      }
-
-      return NextResponse.json({ success: true, response: aiResponse });
+      return NextResponse.json({ 
+        success: true, 
+        message: `Escala Recorrente (${escalaObj.recorrencia}) agendada com sucesso!`, 
+        escalaObj 
+      });
     }
 
-    // 3. Envio de Texto Padrão via Evolution API
+    // 3. Envio Padrão
     const res = await fetch(`${EVOLUTION_API_URL}/message/sendText/${INSTANCE_NAME}`, {
       method: 'POST',
       headers: {
