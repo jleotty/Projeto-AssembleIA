@@ -16,7 +16,7 @@ export default function MembroPortalPage() {
     cpf: '100.000.100-10',
     dataNascimento: '20/05/1985',
     cargo: 'Evangelista',
-    congregacao: 'Assembleia de Deus — Sede Central',
+    congregacao: 'Assembleia de Deus - Sede Central',
     fotoCarteirinha: '/uploads/membros/carteirinha/000001_rosto.jpg',
     dataEmissao: '01/2026',
     validade: '01/2031',
@@ -35,7 +35,8 @@ export default function MembroPortalPage() {
       const data = await res.json();
       if (data.success && data.data.length > 0) {
         const m = data.data[0];
-        const fotoRosto = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA')?.caminho || m.foto || '/uploads/membros/carteirinha/000001_rosto.jpg';
+        const fotoRostoObj = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA');
+        const fotoRosto = fotoRostoObj ? fotoRostoObj.caminho : (m.foto && !m.foto.includes('corpo') ? m.foto : `/uploads/membros/carteirinha/${String(m.id).padStart(6, '0')}_rosto.jpg`);
 
         setMembroData({
           numeroMembro: m.numeroMembro || `AD-2026-${String(m.id).padStart(4, '0')}`,
@@ -43,7 +44,7 @@ export default function MembroPortalPage() {
           cpf: m.cpf || 'Não informado',
           dataNascimento: m.dataNascimento ? new Date(m.dataNascimento).toLocaleDateString('pt-BR') : '20/05/1985',
           cargo: m.membroMinisterios?.[0]?.ministerio?.nome || 'Membro',
-          congregacao: m.congregacao?.nome || 'Sede Central',
+          congregacao: m.congregacao?.nome || 'Assembleia de Deus - Sede Central',
           fotoCarteirinha: fotoRosto,
           dataEmissao: m.carteirinha?.dataEmissao ? new Date(m.carteirinha.dataEmissao).toLocaleDateString('pt-BR').slice(3) : '01/2026',
           validade: m.carteirinha?.validade ? new Date(m.carteirinha.validade).toLocaleDateString('pt-BR').slice(3) : '01/2031',
@@ -93,18 +94,18 @@ export default function MembroPortalPage() {
           </button>
         </form>
 
-        {/* CARTÃO DIGITAL ELEGANTE, CLEAN E PROFISSIONAL (STRIPE NAVY #0A2540) */}
+        {/* CARTÃO DIGITAL ELEGANTE COM ESTRUTURA FLEX RIGOROSA (100% IGUAL AO PADRÃO JULIAN) */}
         <div className="space-y-4">
           <div className="relative rounded-3xl p-6 bg-[#0A2540] text-white shadow-2xl border border-[#1E4976] overflow-hidden space-y-6">
-            {/* SUBTIL DETALHE SUPERIOR */}
+            {/* DETALHE SUPERIOR BORDADO */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-purple-500 to-amber-500" />
 
-            {/* CABEÇALHO DO CARTÃO */}
-            <div className="flex items-start justify-between relative z-10 pt-1">
+            {/* CABEÇALHO */}
+            <div className="flex items-start justify-between relative z-10 border-b border-white/10 pb-4 pt-1">
               <div className="flex items-center gap-3">
-                <img src="/logo.jpg" alt="Logo AD" className="w-11 h-11 rounded-xl object-cover border border-white/20 shadow" />
+                <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow" />
                 <div>
-                  <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">Igreja Assembleia de Deus</h2>
+                  <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">IGREJA ASSEMBLEIA DE DEUS</h2>
                   <p className="text-[10px] text-slate-300 font-medium">{membroData.congregacao}</p>
                 </div>
               </div>
@@ -114,38 +115,37 @@ export default function MembroPortalPage() {
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE LIMPO */}
-            <div className="grid grid-cols-12 gap-3 items-center relative z-10">
-              {/* FOTO 3X4 E DADOS (ESQUERDA) */}
-              <div className="col-span-8 flex items-center gap-3">
+            {/* FOTO 3X4 FIXA (ESQUERDA) + DADOS DO MEMBRO (MEIO) + QR CODE (DIREITA) */}
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              {/* FOTO 3X4 RIGOROSAMENTE FIXA COM DIMENSÃO w-28 h-36 */}
+              <div className="w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0 bg-slate-800">
                 <img 
                   src={membroData.fotoCarteirinha} 
-                  alt="Foto do Membro" 
-                  className="w-18 h-22 object-cover rounded-xl border border-white/30 shadow flex-shrink-0"
+                  alt="Foto 3x4" 
+                  className="w-full h-full object-cover" 
                 />
+              </div>
 
-                <div className="space-y-1.5 overflow-hidden">
-                  <div>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
-                    <h3 className="text-xs font-extrabold text-white truncate leading-tight uppercase">{membroData.nomeCompleto}</h3>
-                  </div>
+              {/* DADOS DO MEMBRO (MEMBRO TITULAR + REGISTRO) */}
+              <div className="flex-1 min-w-0 space-y-3">
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
+                  <h4 className="font-extrabold text-sm text-white truncate leading-tight uppercase tracking-wide">
+                    {membroData.nomeCompleto}
+                  </h4>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-1 text-[10px]">
-                    <div>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase block">REGISTRO</span>
-                      <span className="font-mono font-extrabold text-amber-400 text-[11px]">{membroData.numeroMembro}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase block">VALIDADE</span>
-                      <span className="font-bold text-slate-200 text-[11px]">{membroData.validade}</span>
-                    </div>
-                  </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">REGISTRO</span>
+                  <span className="font-mono font-extrabold text-amber-400 text-xs tracking-wider">
+                    #{membroData.numeroMembro}
+                  </span>
                 </div>
               </div>
 
               {/* QR CODE ÚNICO (DIREITA) */}
-              <div className="col-span-4 flex flex-col items-center justify-center">
-                <div className="bg-white p-1.5 rounded-xl shadow-md border border-white/20">
+              <div className="flex flex-col items-center justify-center flex-shrink-0">
+                <div className="bg-white p-2 rounded-2xl shadow-md border border-white/20">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(membroData.qrCodeContent)}`} 
                     alt="QR Code Único"
@@ -157,7 +157,7 @@ export default function MembroPortalPage() {
             </div>
           </div>
 
-          {/* APENAS O BOTÃO SALVAR NA GALERIA */}
+          {/* BOTÃO SALVAR NA GALERIA */}
           <button 
             onClick={() => window.print()}
             className="w-full py-3.5 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] font-extrabold text-xs shadow-stripe-sm hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"

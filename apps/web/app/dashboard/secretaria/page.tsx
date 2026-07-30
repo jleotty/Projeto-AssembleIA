@@ -6,7 +6,6 @@ import {
   UserPlus, 
   Search, 
   CreditCard, 
-  QrCode as QrCodeIcon, 
   Trash2, 
   ChevronLeft, 
   ChevronRight,
@@ -266,10 +265,9 @@ export default function SecretariaMembrosPage() {
                   </td>
                 </tr>
               ) : membros.map((m) => {
-                // SELEÇÃO RIGOROSA DA FOTO 3X4 DE ROSTO (CARTEIRINHA)
                 const fotoRostoObj = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA');
-                const fotoRosto = fotoRostoObj ? fotoRostoObj.caminho : (m.foto && !m.foto.includes('corpo') ? m.foto : '/uploads/membros/carteirinha/000001_rosto.jpg');
-                const qrCodeStr = m.carteirinha?.qrCode || `https://assembleia.com/verificar-carteira?membroId=${m.id}&numero=${m.numeroMembro}`;
+                const fotoRosto = fotoRostoObj ? fotoRostoObj.caminho : (m.foto && !m.foto.includes('corpo') ? m.foto : `/uploads/membros/carteirinha/${String(m.id).padStart(6, '0')}_rosto.jpg`);
+                const qrCodeStr = m.carteirinha?.qrCode || `https://assembleia.com/verificar-carteira?membroId=${m.id}&numero=${m.numeroMembro || 'AD-2026-' + String(m.id).padStart(4, '0')}`;
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50 transition-colors">
@@ -277,11 +275,11 @@ export default function SecretariaMembrosPage() {
                       <img 
                         src={fotoRosto} 
                         alt={m.nomeCompleto} 
-                        className="w-10 h-12 object-cover aspect-[3/4] rounded-lg border border-brand-blue shadow-sm" 
+                        className="w-10 h-12 object-cover rounded-lg border border-brand-blue shadow-sm" 
                       />
                     </td>
                     <td className="py-2.5 px-4 font-mono font-extrabold text-brand-blue">
-                      #{m.numeroMembro || m.id}
+                      #{m.numeroMembro || `AD-2026-${String(m.id).padStart(4, '0')}`}
                     </td>
                     <td className="py-2.5 px-4 font-extrabold text-[#0A2540] text-sm">
                       {m.nomeCompleto}
@@ -356,7 +354,7 @@ export default function SecretariaMembrosPage() {
                     </label>
                     <div className="flex items-center gap-4">
                       {form.fotoCarteirinha ? (
-                        <img src={form.fotoCarteirinha} alt="Foto Carteirinha" className="w-20 h-26 object-cover aspect-[3/4] rounded-xl border border-brand-blue shadow-sm" />
+                        <img src={form.fotoCarteirinha} alt="Foto Carteirinha" className="w-20 h-26 object-cover rounded-xl border border-brand-blue shadow-sm" />
                       ) : (
                         <div className="w-20 h-26 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
                           <Camera className="w-6 h-6" />
@@ -514,24 +512,25 @@ export default function SecretariaMembrosPage() {
         </div>
       )}
 
-      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL (PADRÃO CORRETO 3X4 E LAYOUT LIMPO) */}
+      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL - PADRÃO RIGOROSO 100% IDENTICO AO JULIAN */}
       {carteiraModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative overflow-hidden">
+            {/* BOTÃO FECHAR */}
             <button onClick={() => setCarteiraModalOpen(null)} className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white z-20">
               <X className="w-5 h-5" />
             </button>
 
-            {/* DETALHE SUPERIOR */}
+            {/* DETALHE SUPERIOR BORDADO */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-purple-500 to-amber-500" />
 
-            {/* CABEÇALHO */}
+            {/* CABEÇALHO DA CARTEIRINHA */}
             <div className="flex items-start justify-between relative z-10 border-b border-white/10 pb-4 pt-1">
               <div className="flex items-center gap-3">
                 <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow" />
                 <div>
-                  <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">Igreja Assembleia de Deus</h3>
-                  <p className="text-[10px] text-slate-300 font-medium">{carteiraModalOpen.congregacao?.nome || 'Sede Central'}</p>
+                  <h3 className="text-xs font-extrabold text-white uppercase tracking-wider">IGREJA ASSEMBLEIA DE DEUS</h3>
+                  <p className="text-[10px] text-slate-300 font-medium">{carteiraModalOpen.congregacao?.nome || 'Assembleia de Deus - Sede Central'}</p>
                 </div>
               </div>
 
@@ -540,33 +539,37 @@ export default function SecretariaMembrosPage() {
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: FOTO 3X4 EXATA DE ROSTO (FIXA E AJUSTADA) + DADOS + QR CODE */}
-            <div className="grid grid-cols-12 gap-3 items-center relative z-10">
-              {/* FOTO 3X4 E DADOS (ESQUERDA) */}
-              <div className="col-span-8 flex items-center gap-3">
-                <div className="w-20 h-26 rounded-xl overflow-hidden border border-white/40 shadow flex-shrink-0 bg-slate-800">
-                  <img 
-                    src={carteiraModalOpen.fotoRosto} 
-                    alt="Foto 3x4 do Membro" 
-                    className="w-full h-full object-cover aspect-[3/4]" 
-                  />
+            {/* FOTO 3X4 FIXA (ESQUERDA) + DADOS DO MEMBRO (MEIO) + QR CODE (DIREITA) */}
+            <div className="flex items-center justify-between gap-3 relative z-10">
+              {/* FOTO 3X4 RIGOROSAMENTE FIXA COM DIMENSÃO w-28 h-36 */}
+              <div className="w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0 bg-slate-800">
+                <img 
+                  src={carteiraModalOpen.fotoRosto} 
+                  alt="Foto 3x4" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+
+              {/* DADOS DO MEMBRO (MEMBRO TITULAR + REGISTRO) */}
+              <div className="flex-1 min-w-0 space-y-3">
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
+                  <h4 className="font-extrabold text-sm text-white truncate leading-tight uppercase tracking-wide">
+                    {carteiraModalOpen.nomeCompleto}
+                  </h4>
                 </div>
 
-                <div className="space-y-1.5 overflow-hidden">
-                  <div>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
-                    <span className="font-extrabold text-xs text-white block truncate leading-tight uppercase">{carteiraModalOpen.nomeCompleto}</span>
-                  </div>
-                  <div>
-                    <span className="text-[8px] text-slate-400 font-bold uppercase block">REGISTRO</span>
-                    <span className="font-mono font-extrabold text-amber-400 text-xs">#{carteiraModalOpen.numeroMembro || carteiraModalOpen.id}</span>
-                  </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">REGISTRO</span>
+                  <span className="font-mono font-extrabold text-amber-400 text-xs tracking-wider">
+                    #{carteiraModalOpen.numeroMembro || `AD-2026-${String(carteiraModalOpen.id).padStart(4, '0')}`}
+                  </span>
                 </div>
               </div>
 
               {/* QR CODE ÚNICO (DIREITA) */}
-              <div className="col-span-4 flex flex-col items-center justify-center">
-                <div className="bg-white p-1.5 rounded-xl shadow-md border border-white/20">
+              <div className="flex flex-col items-center justify-center flex-shrink-0">
+                <div className="bg-white p-2 rounded-2xl shadow-md border border-white/20">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(carteiraModalOpen.qrCodeStr)}`} 
                     alt="QR Code Carteira" 
