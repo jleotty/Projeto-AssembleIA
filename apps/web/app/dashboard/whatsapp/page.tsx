@@ -358,7 +358,7 @@ export default function WhatsAppSyncPage() {
             <h3 className="text-base font-extrabold text-[#0A2540]">Agendamentos Recorrentes Ativos</h3>
           </div>
           <span className="px-3 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-extrabold border border-blue-200">
-            {statusData.agendamentos?.length || 0} Registros no SQLite
+            {statusData.agendamentos?.length || 0} Agendamentos
           </span>
         </div>
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@assembleia/db';
 
-// GET /api/membros — Consulta principal de membros no SQLite
+// GET /api/membros — Consulta principal de membros
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -46,12 +46,11 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/membros — Cadastro de Membro com Foto vinculada à Carteirinha e QR Code Único
+// POST /api/membros — Cadastro de Membro
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // REGRA 1: Foto de carteirinha OBRIGATÓRIA (rosto nítido, fundo limpo)
     const fotoCarteirinha = body.fotoCarteirinha || body.foto;
     if (!fotoCarteirinha) {
       return NextResponse.json({
@@ -60,7 +59,6 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Tratar CPF: Se for string vazia ou apenas espaços, converter para null
     const cleanCpf = body.cpf && body.cpf.trim() !== '' ? body.cpf.trim() : null;
 
     if (cleanCpf) {
@@ -75,14 +73,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Gerar número de membro único ex: AD-2026-0042
     const totalCount = await db.membro.count();
     const numeroMembro = `AD-${new Date().getFullYear()}-${String(totalCount + 1).padStart(4, '0')}`;
 
-    // Buscar congregação padrão
     const congregacaoPadrao = await db.congregacao.findFirst();
 
-    // 1. Dados Pessoais
     const novoMembro = await db.membro.create({
       data: {
         numeroMembro,
@@ -91,7 +86,7 @@ export async function POST(request: Request) {
         dataNascimento: body.dataNascimento ? new Date(body.dataNascimento) : null,
         sexo: body.sexo,
         estadoCivil: body.estadoCivil,
-        cpf: cleanCpf, // null se for vazio
+        cpf: cleanCpf,
         rg: body.rg && body.rg.trim() !== '' ? body.rg.trim() : null,
         telefone: body.telefone || null,
         whatsapp: body.whatsapp || body.telefone || null,
@@ -108,19 +103,17 @@ export async function POST(request: Request) {
       },
     });
 
-    // Salvar FotoMembro: CARTEIRINHA (Obrigatória)
     await db.fotoMembro.create({
       data: {
         membroId: novoMembro.id,
         tipo: 'CARTEIRINHA',
         arquivo: `${numeroMembro}.jpg`,
-        caminho: fotoCarteirinha.startsWith('data:') ? fotoCarteirinha : `uploads/membros/${numeroMembro}.jpg`,
+        caminho: fotoCarteirinha,
         extensao: 'jpg',
         principal: 1,
       },
     });
 
-    // Salvar FotoMembro: BANNER (Opcional)
     if (body.fotoBanner) {
       await db.fotoMembro.create({
         data: {
@@ -134,7 +127,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // QR Code Único por Carteirinha
     const qrCodeContent = `https://assembleia.com/verificar-carteira?membroId=${novoMembro.id}&numero=${numeroMembro}`;
 
     await db.carteirinha.create({
@@ -148,7 +140,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // 2. Informações Familiares
     if (body.nomePai || body.nomeMae || body.nomeConjuge) {
       await db.familiar.create({
         data: {
@@ -160,7 +151,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Filhos
     if (Array.isArray(body.filhos) && body.filhos.length > 0) {
       for (const f of body.filhos) {
         if (f.nome) {
@@ -175,7 +165,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Informações Espirituais
     await db.vidaEspiritual.create({
       data: {
         membroId: novoMembro.id,
@@ -189,7 +178,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // 4. Participação na Igreja (Ministérios)
     if (Array.isArray(body.ministerios) && body.ministerios.length > 0) {
       const ministeriosDB = await db.ministerio.findMany({
         where: { nome: { in: body.ministerios } },
@@ -207,7 +195,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Informações Adicionais / Observações
     await db.observacaoMembro.create({
       data: {
         membroId: novoMembro.id,
@@ -219,23 +206,119 @@ export async function POST(request: Request) {
       },
     });
 
-    // Histórico Inicial (Verificar se existe usuarioId para não violar foreign key constraint)
-    const adminUser = await db.usuario.findFirst();
-    await db.historicoMembro.create({
-      data: {
-        membroId: novoMembro.id,
-        usuarioId: adminUser?.id || null,
-        acao: 'Abertura de cadastro',
-        descricao: 'Membro cadastrado com foto e carteirinha gerada',
-      },
-    });
-
     return NextResponse.json({ 
       success: true, 
       message: 'Cadastro realizado com sucesso!',
       numeroMembro,
       membroId: novoMembro.id,
       qrCode: qrCodeContent
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// PUT /api/membros — Atualização de Cadastro Existente
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const id = parseInt(body.id, 10);
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID do membro é obrigatório para edição.' }, { status: 400 });
+    }
+
+    const cleanCpf = body.cpf && body.cpf.trim() !== '' ? body.cpf.trim() : null;
+
+    if (cleanCpf) {
+      const cpfOutro = await db.membro.findFirst({
+        where: { cpf: cleanCpf, NOT: { id } }
+      });
+      if (cpfOutro) {
+        return NextResponse.json({
+          success: false,
+          error: `O CPF ${cleanCpf} já está em uso pelo membro ${cpfOutro.nomeCompleto}.`,
+        }, { status: 400 });
+      }
+    }
+
+    // 1. Atualizar dados principais
+    const membroAtualizado = await db.membro.update({
+      where: { id },
+      data: {
+        nomeCompleto: body.nomeCompleto,
+        dataNascimento: body.dataNascimento ? new Date(body.dataNascimento) : null,
+        sexo: body.sexo,
+        estadoCivil: body.estadoCivil,
+        cpf: cleanCpf,
+        rg: body.rg && body.rg.trim() !== '' ? body.rg.trim() : null,
+        telefone: body.telefone || null,
+        whatsapp: body.whatsapp || body.telefone || null,
+        email: body.email || null,
+        endereco: body.endereco || null,
+        numero: body.numero || null,
+        bairro: body.bairro || null,
+        cidade: body.cidade || null,
+        estado: body.estado || null,
+        cep: body.cep || null,
+        foto: body.fotoCarteirinha || undefined,
+      },
+    });
+
+    // 2. Atualizar Foto 3x4 se enviada
+    if (body.fotoCarteirinha) {
+      const fotoExiste = await db.fotoMembro.findFirst({
+        where: { membroId: id, tipo: 'CARTEIRINHA' }
+      });
+
+      if (fotoExiste) {
+        await db.fotoMembro.update({
+          where: { id: fotoExiste.id },
+          data: { caminho: body.fotoCarteirinha }
+        });
+      } else {
+        await db.fotoMembro.create({
+          data: {
+            membroId: id,
+            tipo: 'CARTEIRINHA',
+            arquivo: `${membroAtualizado.numeroMembro}.jpg`,
+            caminho: body.fotoCarteirinha,
+            extensao: 'jpg',
+            principal: 1,
+          }
+        });
+      }
+    }
+
+    // 3. Atualizar Foto Banner se enviada
+    if (body.fotoBanner) {
+      const bannerExiste = await db.fotoMembro.findFirst({
+        where: { membroId: id, tipo: 'BANNER' }
+      });
+
+      if (bannerExiste) {
+        await db.fotoMembro.update({
+          where: { id: bannerExiste.id },
+          data: { caminho: body.fotoBanner }
+        });
+      } else {
+        await db.fotoMembro.create({
+          data: {
+            membroId: id,
+            tipo: 'BANNER',
+            arquivo: `${membroAtualizado.numeroMembro}_banner.jpg`,
+            caminho: body.fotoBanner,
+            extensao: 'jpg',
+            principal: 0,
+          }
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Cadastro de ${membroAtualizado.nomeCompleto} atualizado com sucesso!`,
+      data: membroAtualizado,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

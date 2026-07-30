@@ -7,6 +7,7 @@ import {
   Search, 
   CreditCard, 
   Trash2, 
+  Edit3,
   ChevronLeft, 
   ChevronRight,
   X,
@@ -29,8 +30,9 @@ export default function SecretariaMembrosPage() {
   const [total, setTotal] = useState(0);
   const limit = 20;
 
-  // Modal de Cadastro Completo
+  // Modal State (Cadastro & Edição)
   const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [carteiraModalOpen, setCarteiraModalOpen] = useState<any>(null);
 
   // Form State Completo das 6 Seções
@@ -119,7 +121,92 @@ export default function SecretariaMembrosPage() {
     }));
   };
 
-  const handleCreateMember = async (e: React.FormEvent) => {
+  const handleOpenNovoCadastro = () => {
+    setEditingId(null);
+    setForm({
+      nomeCompleto: '',
+      dataNascimento: '',
+      sexo: 'Masculino',
+      estadoCivil: 'Solteiro',
+      cpf: '',
+      rg: '',
+      telefone: '',
+      email: '',
+      endereco: '',
+      numero: '',
+      bairro: '',
+      cidade: 'São Paulo',
+      estado: 'SP',
+      cep: '',
+      fotoCarteirinha: '',
+      fotoBanner: '',
+      nomePai: '',
+      nomeMae: '',
+      nomeConjuge: '',
+      quantidadeFilhos: '0',
+      filhos: [],
+      dataConversao: '',
+      batizadoAguas: 'Não',
+      dataBatismo: '',
+      igrejaBatismo: '',
+      batismoEspiritoSanto: 'Não',
+      veioOutraIgreja: 'Não',
+      igrejaAnterior: '',
+      ministerios: [],
+      talentos: '',
+      necessidadesEspeciais: '',
+      contatoEmergencia: '',
+      telefoneEmergencia: '',
+    });
+    setErroFoto('');
+    setModalCadastroOpen(true);
+  };
+
+  const handleOpenEdit = (m: any) => {
+    setEditingId(m.id);
+    const fotoRostoObj = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA');
+    const fotoBannerObj = m.fotos?.find((f: any) => f.tipo === 'BANNER');
+
+    setForm({
+      nomeCompleto: m.nomeCompleto || '',
+      dataNascimento: m.dataNascimento ? new Date(m.dataNascimento).toISOString().slice(0, 10) : '',
+      sexo: m.sexo || 'Masculino',
+      estadoCivil: m.estadoCivil || 'Solteiro',
+      cpf: m.cpf || '',
+      rg: m.rg || '',
+      telefone: m.telefone || m.whatsapp || '',
+      email: m.email || '',
+      endereco: m.endereco || '',
+      numero: m.numero || '',
+      bairro: m.bairro || '',
+      cidade: m.cidade || 'São Paulo',
+      estado: m.estado || 'SP',
+      cep: m.cep || '',
+      fotoCarteirinha: fotoRostoObj ? fotoRostoObj.caminho : (m.foto || ''),
+      fotoBanner: fotoBannerObj ? fotoBannerObj.caminho : '',
+      nomePai: m.familiares?.[0]?.nomePai || '',
+      nomeMae: m.familiares?.[0]?.nomeMae || '',
+      nomeConjuge: m.familiares?.[0]?.nomeConjuge || '',
+      quantidadeFilhos: String(m.filhos?.length || 0),
+      filhos: m.filhos || [],
+      dataConversao: m.vidaEspiritual?.dataConversao ? new Date(m.vidaEspiritual.dataConversao).toISOString().slice(0, 10) : '',
+      batizadoAguas: m.vidaEspiritual?.batizadoAguas ? 'Sim' : 'Não',
+      dataBatismo: m.vidaEspiritual?.dataBatismo ? new Date(m.vidaEspiritual.dataBatismo).toISOString().slice(0, 10) : '',
+      igrejaBatismo: m.vidaEspiritual?.igrejaBatismo || '',
+      batismoEspiritoSanto: m.vidaEspiritual?.batismoEspiritoSanto ? 'Sim' : 'Não',
+      veioOutraIgreja: m.vidaEspiritual?.veioOutraIgreja ? 'Sim' : 'Não',
+      igrejaAnterior: m.vidaEspiritual?.igrejaAnterior || '',
+      ministerios: m.membroMinisterios?.map((mm: any) => mm.ministerio?.nome).filter(Boolean) || [],
+      talentos: m.observacoes?.[0]?.talentos || '',
+      necessidadesEspeciais: m.observacoes?.[0]?.necessidadesEspeciais || '',
+      contatoEmergencia: m.observacoes?.[0]?.contatoEmergencia || '',
+      telefoneEmergencia: m.observacoes?.[0]?.telefoneEmergencia || '',
+    });
+    setErroFoto('');
+    setModalCadastroOpen(true);
+  };
+
+  const handleSaveMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fotoCarteirinha) {
       setErroFoto('A Foto 3x4 de Carteirinha (rosto nítido) é OBRIGATÓRIA.');
@@ -127,54 +214,23 @@ export default function SecretariaMembrosPage() {
     }
 
     try {
-      const res = await fetch('/api/membros', {
-        method: 'POST',
+      const isEdit = editingId !== null;
+      const url = '/api/membros';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, id: editingId }),
       });
 
       const data = await res.json();
       if (data.success) {
-        alert(`Membro ${form.nomeCompleto} cadastrado com sucesso! Nº Registro: ${data.numeroMembro}.`);
+        alert(isEdit ? `Cadastro de ${form.nomeCompleto} editado com sucesso!` : `Membro ${form.nomeCompleto} cadastrado com sucesso!`);
         setModalCadastroOpen(false);
-        setForm({
-          nomeCompleto: '',
-          dataNascimento: '',
-          sexo: 'Masculino',
-          estadoCivil: 'Solteiro',
-          cpf: '',
-          rg: '',
-          telefone: '',
-          email: '',
-          endereco: '',
-          numero: '',
-          bairro: '',
-          cidade: 'São Paulo',
-          estado: 'SP',
-          cep: '',
-          fotoCarteirinha: '',
-          fotoBanner: '',
-          nomePai: '',
-          nomeMae: '',
-          nomeConjuge: '',
-          quantidadeFilhos: '0',
-          filhos: [],
-          dataConversao: '',
-          batizadoAguas: 'Não',
-          dataBatismo: '',
-          igrejaBatismo: '',
-          batismoEspiritoSanto: 'Não',
-          veioOutraIgreja: 'Não',
-          igrejaAnterior: '',
-          ministerios: [],
-          talentos: '',
-          necessidadesEspeciais: '',
-          contatoEmergencia: '',
-          telefoneEmergencia: '',
-        });
-        fetchMembros(1, search);
+        fetchMembros(page, search);
       } else {
-        alert(data.error || 'Erro ao cadastrar membro.');
+        alert(data.error || 'Erro ao salvar membro.');
       }
     } catch (e) {
       alert('Erro de conexão ao salvar membro.');
@@ -196,7 +252,7 @@ export default function SecretariaMembrosPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* HEADER DA SECRETARIA COM BOTÃO ÚNICO DE CADASTRO COMPLETO */}
+      {/* HEADER DA SECRETARIA COM REMOÇÃO DA PALAVRA "SQLITE" */}
       <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -204,7 +260,7 @@ export default function SecretariaMembrosPage() {
               <Users className="w-6 h-6 text-brand-blue" /> Secretaria & Rol de Membros
             </h1>
             <span className="px-3 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-extrabold border border-blue-200">
-              {total} Cadastrados no SQLite
+              {total} Cadastrados
             </span>
           </div>
           <p className="text-xs text-[#425466] mt-1 font-semibold">
@@ -213,7 +269,7 @@ export default function SecretariaMembrosPage() {
         </div>
 
         <button 
-          onClick={() => setModalCadastroOpen(true)}
+          onClick={handleOpenNovoCadastro}
           className="px-6 py-3 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" /> Cadastrar Membro
@@ -242,7 +298,7 @@ export default function SecretariaMembrosPage() {
         </form>
       </div>
 
-      {/* TABELA DE MEMBROS */}
+      {/* TABELA DE MEMBROS COM AÇÕES DE EDITAR E EXCLUIR */}
       <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -261,7 +317,7 @@ export default function SecretariaMembrosPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">
-                    Carregando Rol de Membros do SQLite...
+                    Carregando Rol de Membros...
                   </td>
                 </tr>
               ) : membros.map((m) => {
@@ -299,12 +355,22 @@ export default function SecretariaMembrosPage() {
                       </button>
                     </td>
                     <td className="py-2.5 px-4 text-right">
-                      <button 
-                        onClick={() => handleDeleteMember(m.id, m.nomeCompleto)}
-                        className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button 
+                          onClick={() => handleOpenEdit(m)}
+                          className="p-1.5 text-brand-blue hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title="Editar Cadastro"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteMember(m.id, m.nomeCompleto)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Excluir Membro"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -323,23 +389,26 @@ export default function SecretariaMembrosPage() {
         </div>
       </div>
 
-      {/* MODAL DE CADASTRO COMPLETO */}
+      {/* MODAL DE CADASTRO E EDIÇÃO COMPLETA */}
       {modalCadastroOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-4xl w-full border border-[#E6EBF1] shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b pb-3">
               <div>
                 <h3 className="text-xl font-extrabold text-[#0A2540] flex items-center gap-2">
-                  <UserPlus className="w-6 h-6 text-brand-blue" /> Formulário de Cadastro de Membro
+                  {editingId ? <Edit3 className="w-6 h-6 text-brand-blue" /> : <UserPlus className="w-6 h-6 text-brand-blue" />} 
+                  {editingId ? 'Editar Cadastro do Membro' : 'Formulário de Cadastro de Membro'}
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">Preencha as seções para cadastrar o membro no SQLite.</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  {editingId ? 'Altere as informações conforme a necessidade e clique em "Salvar cadastro".' : 'Preencha as seções para cadastrar o novo membro.'}
+                </p>
               </div>
               <button onClick={() => setModalCadastroOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateMember} className="space-y-8 text-xs">
+            <form onSubmit={handleSaveMember} className="space-y-8 text-xs">
               {/* UPLOAD DE FOTO DE CARTEIRINHA (OBRIGATÓRIA) & BANNER (OPCIONAL) */}
               <div className="space-y-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
                 <h4 className="font-extrabold text-[#0A2540] flex items-center gap-2">
@@ -350,7 +419,7 @@ export default function SecretariaMembrosPage() {
                   {/* CARTEIRINHA ROSTO */}
                   <div className="space-y-2">
                     <label className="block font-extrabold text-[#0A2540]">
-                      1. Foto 3x4 de Carteirinha * <span className="text-rose-600 font-bold">(OBRIGATÓRIA VINCULADA À CARTEIRA)</span>
+                      1. Foto 3x4 de Carteirinha * <span className="text-rose-600 font-bold">(OBRIGATÓRIA)</span>
                     </label>
                     <div className="flex items-center gap-4">
                       {form.fotoCarteirinha ? (
@@ -501,6 +570,7 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
+              {/* BOTÃO MANTIDO FIEL: Salvar cadastro */}
               <button 
                 type="submit" 
                 className="w-full py-4 rounded-xl bg-flame-gradient text-white text-sm font-extrabold shadow-lg hover:scale-[1.01] transition-transform cursor-pointer flex items-center justify-center gap-2"
@@ -512,19 +582,16 @@ export default function SecretariaMembrosPage() {
         </div>
       )}
 
-      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL - PADRÃO RIGOROSO 100% IDENTICO AO JULIAN */}
+      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL */}
       {carteiraModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative overflow-hidden">
-            {/* BOTÃO FECHAR */}
             <button onClick={() => setCarteiraModalOpen(null)} className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white z-20">
               <X className="w-5 h-5" />
             </button>
 
-            {/* DETALHE SUPERIOR BORDADO */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-blue via-purple-500 to-amber-500" />
 
-            {/* CABEÇALHO DA CARTEIRINHA */}
             <div className="flex items-start justify-between relative z-10 border-b border-white/10 pb-4 pt-1">
               <div className="flex items-center gap-3">
                 <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow" />
@@ -539,9 +606,7 @@ export default function SecretariaMembrosPage() {
               </div>
             </div>
 
-            {/* FOTO 3X4 FIXA (ESQUERDA) + DADOS DO MEMBRO (MEIO) + QR CODE (DIREITA) */}
             <div className="flex items-center justify-between gap-3 relative z-10">
-              {/* FOTO 3X4 RIGOROSAMENTE FIXA COM DIMENSÃO w-28 h-36 */}
               <div className="w-28 h-36 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg flex-shrink-0 bg-slate-800">
                 <img 
                   src={carteiraModalOpen.fotoRosto} 
@@ -550,7 +615,6 @@ export default function SecretariaMembrosPage() {
                 />
               </div>
 
-              {/* DADOS DO MEMBRO (MEMBRO TITULAR + REGISTRO) */}
               <div className="flex-1 min-w-0 space-y-3">
                 <div>
                   <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
@@ -567,7 +631,6 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
-              {/* QR CODE ÚNICO (DIREITA) */}
               <div className="flex flex-col items-center justify-center flex-shrink-0">
                 <div className="bg-white p-2 rounded-2xl shadow-md border border-white/20">
                   <img 
@@ -580,7 +643,6 @@ export default function SecretariaMembrosPage() {
               </div>
             </div>
 
-            {/* BOTÃO SALVAR NA GALERIA */}
             <div className="pt-2 relative z-10">
               <button 
                 onClick={() => window.print()}
