@@ -9,8 +9,7 @@ import {
   ShieldCheck,
   Search,
   Share2,
-  CheckCircle,
-  Sparkles
+  CheckCircle
 } from 'lucide-react';
 
 export default function MembroPortalPage() {
@@ -98,75 +97,75 @@ export default function MembroPortalPage() {
           </button>
         </form>
 
-        {/* CARTÃO DIGITAL ULTRA MODERNO (DESIGN INSPIRATION STRIPE + EXEMPLO DA SAÚDE) */}
+        {/* CARTÃO DIGITAL COM GRADIENTE FIEL DA CHAMA (AZUL -> PÚRPURA -> LARANJA) */}
         <div className="space-y-4">
-          <div className="relative rounded-3xl p-7 bg-gradient-to-br from-[#0A2540] via-[#103E6D] to-[#0A2540] text-white shadow-2xl border border-[#1D4A7A] overflow-hidden space-y-6">
-            {/* GRADIENTE DE BRILHO MODERNO */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-400/20 via-blue-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+          <div className="relative rounded-3xl p-7 bg-gradient-to-br from-[#0062FF] via-[#61279E] to-[#FF4B00] text-white shadow-2xl border border-white/20 overflow-hidden space-y-6">
+            {/* BRILHO SUAVE */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
             {/* CABEÇALHO DO CARTÃO */}
             <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center gap-3">
-                <img src="/logo.jpg" alt="Logo AD" className="w-12 h-12 rounded-2xl object-cover border-2 border-white/30 shadow-md" />
+                <img src="/logo.jpg" alt="Logo AD" className="w-12 h-12 rounded-2xl object-cover border-2 border-white/40 shadow-md" />
                 <div>
                   <h2 className="text-xs font-extrabold text-white uppercase tracking-wider">Igreja Assembleia de Deus</h2>
-                  <p className="text-[10px] text-cyan-300 font-semibold">{membroData.congregacao}</p>
+                  <p className="text-[10px] text-amber-200 font-semibold">{membroData.congregacao}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-extrabold uppercase">
-                <CheckCircle className="w-3 h-3" /> ATIVO
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-[10px] font-extrabold uppercase">
+                <CheckCircle className="w-3 h-3 text-emerald-400" /> ATIVO
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE GRANDE À DIREITA */}
+            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE GRANDE */}
             <div className="grid grid-cols-12 gap-4 items-center relative z-10 pt-2">
               {/* FOTO 3X4 E DADOS (ESQUERDA) */}
               <div className="col-span-8 flex items-center gap-3">
                 <img 
                   src={membroData.fotoCarteirinha} 
                   alt="Foto do Membro" 
-                  className="w-20 h-24 object-cover rounded-2xl border-2 border-white/40 shadow-lg flex-shrink-0"
+                  className="w-20 h-24 object-cover rounded-2xl border-2 border-white/50 shadow-lg flex-shrink-0"
                 />
 
                 <div className="space-y-2 overflow-hidden">
                   <div>
-                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
+                    <span className="text-[9px] text-amber-200 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
                     <h3 className="text-sm font-extrabold text-white truncate leading-tight tracking-wide">{membroData.nomeCompleto}</h3>
                   </div>
 
                   <div className="grid grid-cols-2 gap-1 text-[10px]">
                     <div>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase block">REGISTRO</span>
-                      <span className="font-mono font-extrabold text-cyan-300">{membroData.numeroMembro}</span>
+                      <span className="text-[8px] text-white/80 font-bold uppercase block">REGISTRO</span>
+                      <span className="font-mono font-extrabold text-amber-300">{membroData.numeroMembro}</span>
                     </div>
                     <div>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase block">VALIDADE</span>
-                      <span className="font-bold text-slate-200">{membroData.validade}</span>
+                      <span className="text-[8px] text-white/80 font-bold uppercase block">VALIDADE</span>
+                      <span className="font-bold text-white">{membroData.validade}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* QR CODE GRANDE EM DESTAQUE COM MOLDURA BRANCA (DIREITA) */}
+              {/* QR CODE GRANDE COM MOLDURA BRANCA (DIREITA) */}
               <div className="col-span-4 flex flex-col items-center justify-center">
-                <div className="bg-white p-2.5 rounded-2xl shadow-xl border-2 border-white/20">
+                <div className="bg-white p-2.5 rounded-2xl shadow-2xl border-2 border-white/30">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(membroData.qrCodeContent)}`} 
                     alt="QR Code Único"
                     className="w-20 h-20 object-contain"
                   />
                 </div>
-                <span className="text-[8px] text-cyan-200 font-bold uppercase mt-1 text-center">QR CODE ÚNICO</span>
+                <span className="text-[8px] text-white font-bold uppercase mt-1 text-center">QR CODE ÚNICO</span>
               </div>
             </div>
           </div>
 
-          {/* BOTÕES DE AÇÃO IGUAL O EXEMPLO */}
+          {/* BOTÕES DE AÇÃO */}
           <div className="space-y-3">
             <button 
               onClick={() => alert('Link da carteirinha copiado para o WhatsApp!')}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0A2540] via-[#635BFF] to-[#0A2540] text-white font-extrabold text-xs shadow-lg hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#0062FF] via-[#61279E] to-[#FF4B00] text-white font-extrabold text-xs shadow-lg hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 cursor-pointer"
             >
               <Share2 className="w-4 h-4" /> Compartilhar carteirinha
             </button>
