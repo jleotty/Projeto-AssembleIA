@@ -74,45 +74,72 @@ export async function POST(request: Request) {
     const body = await request.json();
     const action = body.action || 'SEND_TEXT';
 
-    // 1. Agendar ou Disparar Status com Foto de Banner / Mídia
+    // 1. Agendar ou Disparar Status / Transmissão de Mídia com Banner
     if (action === 'SCHEDULE_STATUS' || action === 'SEND_STATUS') {
       const rawMedia = body.mediaBase64 || body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
       
-      // EVOLUTION API REQUER BASE64 PURO SEM A PREFIXA 'data:image/...;base64,'
+      // EVOLUTION API REQUER BASE64 PURO SEM PREFIXO 'data:image/...;base64,'
       let cleanMedia = rawMedia;
       if (cleanMedia.includes('base64,')) {
         cleanMedia = cleanMedia.split('base64,')[1];
       }
 
       const captionText = body.legenda ? `${body.titulo}\n\n${body.legenda}` : body.titulo || 'Comunicado Oficial AssembleIA';
-      const targetNumber = (body.number || '555195419525').replace(/\D/g, '');
+      
+      // Determinar números de destino: se número específico foi informado, usar ele.
+      // Se não, buscar a lista de membros no banco para transmissão oficial
+      let targetNumbers: string[] = [];
 
-      // DISPARO IMEDIATO VIA EVOLUTION API COM BASE64 PURO
-      let evolutionSuccess = false;
-      let evolutionResponse = null;
-
-      try {
-        const evoRes = await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${INSTANCE_NAME}`, {
-          method: 'POST',
-          headers: {
-            'apikey': EVOLUTION_API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            number: targetNumber,
-            media: cleanMedia,
-            mediatype: 'image',
-            caption: captionText,
-          }),
+      if (body.number && body.number.trim() !== '') {
+        targetNumbers.push(body.number.replace(/\D/g, ''));
+      } else {
+        const membrosComTel = await db.membro.findMany({
+          where: { ativo: 1, OR: [{ telefone: { not: null } }, { whatsapp: { not: null } }] },
+          take: 20,
         });
 
-        evolutionResponse = await evoRes.json();
-        evolutionSuccess = evoRes.ok && (evoRes.status === 200 || evoRes.status === 201);
-      } catch (err: any) {
-        console.error('Erro ao disparar via Evolution API:', err);
+        const tels = membrosComTel
+          .map(m => (m.whatsapp || m.telefone || '').replace(/\D/g, ''))
+          .filter(t => t.length >= 10);
+
+        if (tels.length > 0) {
+          targetNumbers = tels;
+        } else {
+          targetNumbers = ['555195419525']; // fallback se nenhum membro tiver telefone
+        }
       }
 
-      // SALVAR RECORD NO SQLITE
+      let successCount = 0;
+      let lastEvolutionResponse = null;
+
+      // Disparar anexo de imagem + legenda para cada número de destino
+      for (const num of targetNumbers) {
+        try {
+          const evoRes = await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${INSTANCE_NAME}`, {
+            method: 'POST',
+            headers: {
+              'apikey': EVOLUTION_API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              number: num,
+              media: cleanMedia,
+              mediatype: 'image',
+              caption: captionText,
+            }),
+          });
+
+          const data = await evoRes.json();
+          lastEvolutionResponse = data;
+          if (evoRes.ok && (evoRes.status === 200 || evoRes.status === 201)) {
+            successCount++;
+          }
+        } catch (err: any) {
+          console.error(`Erro ao disparar via Evolution API para ${num}:`, err);
+        }
+      }
+
+      // SALVAR REGISTRO NO SQLITE
       const statusObj = await db.statusWhatsapp.create({
         data: {
           titulo: body.titulo || 'Aviso Recorrente da Igreja',
@@ -123,17 +150,15 @@ export async function POST(request: Request) {
           recorrencia: body.recorrencia || 'DIARIA',
           frequenciaDia: parseInt(body.frequenciaDia || '1', 10),
           diasSemana: Array.isArray(body.diasSemana) ? body.diasSemana.join(',') : (body.diasSemana || 'DOMINGO'),
-          status: evolutionSuccess ? 'ENVIADO' : 'PENDENTE',
+          status: successCount > 0 ? 'ENVIADO' : 'PENDENTE',
         },
       });
 
       return NextResponse.json({ 
         success: true, 
-        message: evolutionSuccess 
-          ? `Status e foto de banner enviados com sucesso no WhatsApp (${targetNumber})!`
-          : `Agendamento criado! Tentativa Evolution API: ${JSON.stringify(evolutionResponse)}`,
+        message: `Comunicado/Status disparado com sucesso para ${successCount} contato(s) no WhatsApp!`,
         statusObj,
-        evolutionResponse
+        lastEvolutionResponse
       });
     }
 
