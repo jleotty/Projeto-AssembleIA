@@ -68,57 +68,69 @@ export async function GET() {
   }
 }
 
-// POST /api/whatsapp — Envio e Agendamento Recorrente (Diário, Semanal, Mensal, Anual, Frequência no dia)
+// POST /api/whatsapp — Envio Imediato e Agendamento Recorrente
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const action = body.action || 'SEND_TEXT';
 
-    // 1. Agendar Status Recorrente (Diário, Semanal, Mensal, Anual + Mídia)
-    if (action === 'SCHEDULE_STATUS') {
+    // 1. Agendar ou Disparar Status com Foto de Banner / Mídia
+    if (action === 'SCHEDULE_STATUS' || action === 'SEND_STATUS') {
       const mediaUrl = body.mediaBase64 || body.mediaUrl || '/uploads/membros/banner/000001_corpo.jpg';
-      
-      const statusObj = await db.statusWhatsapp.create({
-        data: {
-          titulo: body.titulo || 'Aviso Recorrente da Igreja',
-          tipoMedia: 'IMAGEM_BANNER',
-          mediaUrl: mediaUrl,
-          legenda: body.legenda || body.text || '',
-          dataAgendada: body.dataAgendada ? new Date(body.dataAgendada) : new Date(),
-          recorrencia: body.recorrencia || 'UNICA', // UNICA, DIARIA, SEMANAL, MENSAL, ANUAL
-          frequenciaDia: parseInt(body.frequenciaDia || '1', 10),
-          diasSemana: Array.isArray(body.diasSemana) ? body.diasSemana.join(',') : (body.diasSemana || 'DOMINGO'),
-          status: 'PENDENTE',
-        },
-      });
+      const captionText = body.legenda ? `${body.titulo}\n\n${body.legenda}` : body.titulo || 'Comunicado Oficial AssembleIA';
+      const targetNumber = (body.number || '555195419525').replace(/\D/g, '');
 
-      // Disparar anexo físico se número especificado
-      if (body.number) {
-        await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${INSTANCE_NAME}`, {
+      // DISPARO IMEDIATO VIA EVOLUTION API COM PAYLOAD FLAT CORRETO
+      let evolutionSuccess = false;
+      let evolutionResponse = null;
+
+      try {
+        const evoRes = await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${INSTANCE_NAME}`, {
           method: 'POST',
           headers: {
             'apikey': EVOLUTION_API_KEY,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            number: body.number.replace(/\D/g, ''),
-            mediaMessage: {
-              mediatype: 'image',
-              caption: statusObj.legenda || statusObj.titulo,
-              media: mediaUrl,
-            },
+            number: targetNumber,
+            media: mediaUrl,
+            mediatype: 'image',
+            caption: captionText,
           }),
-        }).catch(() => null);
+        });
+
+        evolutionResponse = await evoRes.json();
+        evolutionSuccess = evoRes.ok && (evoRes.status === 200 || evoRes.status === 201);
+      } catch (err: any) {
+        console.error('Erro ao chamar Evolution API sendMedia:', err);
       }
+
+      // GRAVAR RECORD NO BANCO SQLITE
+      const statusObj = await db.statusWhatsapp.create({
+        data: {
+          titulo: body.titulo || 'Aviso Recorrente da Igreja',
+          tipoMedia: 'IMAGEM_BANNER',
+          mediaUrl: mediaUrl,
+          legenda: captionText,
+          dataAgendada: body.dataAgendada ? new Date(body.dataAgendada) : new Date(),
+          recorrencia: body.recorrencia || 'DIARIA',
+          frequenciaDia: parseInt(body.frequenciaDia || '1', 10),
+          diasSemana: Array.isArray(body.diasSemana) ? body.diasSemana.join(',') : (body.diasSemana || 'DOMINGO'),
+          status: evolutionSuccess ? 'ENVIADO' : 'PENDENTE',
+        },
+      });
 
       return NextResponse.json({ 
         success: true, 
-        message: `Automação Recorrente (${statusObj.recorrencia} - ${statusObj.frequenciaDia}x/dia) agendada com sucesso!`, 
-        statusObj 
+        message: evolutionSuccess 
+          ? `Status e anexo de mídia disparados com sucesso no WhatsApp (${targetNumber})!`
+          : `Agendamento salvo no banco. Status Evolution API: ${JSON.stringify(evolutionResponse)}`,
+        statusObj,
+        evolutionResponse
       });
     }
 
-    // 2. Agendar Escala Recorrente (Diária, Semanal, Mensal)
+    // 2. Agendar Escala Recorrente
     if (action === 'SCHEDULE_ESCALA') {
       const escalaObj = await db.escalaAgendada.create({
         data: {
@@ -138,7 +150,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // 3. Envio Padrão
+    // 3. Envio de Texto Padrão
+    const targetNumber = (body.number || '555195419525').replace(/\D/g, '');
     const res = await fetch(`${EVOLUTION_API_URL}/message/sendText/${INSTANCE_NAME}`, {
       method: 'POST',
       headers: {
@@ -146,8 +159,8 @@ export async function POST(request: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        number: body.number.replace(/\D/g, ''),
-        text: body.text,
+        number: targetNumber,
+        text: body.text || 'Notificação oficial AssembleIA',
       }),
     });
 
