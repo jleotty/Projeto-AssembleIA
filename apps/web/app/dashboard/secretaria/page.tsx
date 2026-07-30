@@ -50,7 +50,7 @@ export default function SecretariaMembrosPage() {
     cidade: 'São Paulo',
     estado: 'SP',
     cep: '',
-    fotoCarteirinha: '', // OBRIGATÓRIA 3X4
+    fotoCarteirinha: '', // OBRIGATÓRIA 3X4 ROSTO
     fotoBanner: '',      // OPCIONAL CORPO INTEIRO
     nomePai: '',
     nomeMae: '',
@@ -266,13 +266,19 @@ export default function SecretariaMembrosPage() {
                   </td>
                 </tr>
               ) : membros.map((m) => {
-                const fotoRosto = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA')?.caminho || m.foto || '/uploads/membros/carteirinha/000001_rosto.jpg';
+                // SELEÇÃO RIGOROSA DA FOTO 3X4 DE ROSTO (CARTEIRINHA)
+                const fotoRostoObj = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA');
+                const fotoRosto = fotoRostoObj ? fotoRostoObj.caminho : (m.foto && !m.foto.includes('corpo') ? m.foto : '/uploads/membros/carteirinha/000001_rosto.jpg');
                 const qrCodeStr = m.carteirinha?.qrCode || `https://assembleia.com/verificar-carteira?membroId=${m.id}&numero=${m.numeroMembro}`;
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 px-4">
-                      <img src={fotoRosto} alt={m.nomeCompleto} className="w-10 h-12 object-cover rounded-lg border border-brand-blue shadow-sm" />
+                      <img 
+                        src={fotoRosto} 
+                        alt={m.nomeCompleto} 
+                        className="w-10 h-12 object-cover aspect-[3/4] rounded-lg border border-brand-blue shadow-sm" 
+                      />
                     </td>
                     <td className="py-2.5 px-4 font-mono font-extrabold text-brand-blue">
                       #{m.numeroMembro || m.id}
@@ -350,9 +356,9 @@ export default function SecretariaMembrosPage() {
                     </label>
                     <div className="flex items-center gap-4">
                       {form.fotoCarteirinha ? (
-                        <img src={form.fotoCarteirinha} alt="Foto Carteirinha" className="w-20 h-24 object-cover rounded-xl border border-brand-blue shadow-sm" />
+                        <img src={form.fotoCarteirinha} alt="Foto Carteirinha" className="w-20 h-26 object-cover aspect-[3/4] rounded-xl border border-brand-blue shadow-sm" />
                       ) : (
-                        <div className="w-20 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                        <div className="w-20 h-26 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
                           <Camera className="w-6 h-6" />
                           <span className="text-[9px] font-bold mt-1">3x4 Oblig.</span>
                         </div>
@@ -508,7 +514,7 @@ export default function SecretariaMembrosPage() {
         </div>
       )}
 
-      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL CLEAN E PROFISSIONAL (STRIPE NAVY #0A2540) */}
+      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL (PADRÃO CORRETO 3X4 E LAYOUT LIMPO) */}
       {carteiraModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative overflow-hidden">
@@ -534,14 +540,18 @@ export default function SecretariaMembrosPage() {
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL: FOTO + DADOS + QR CODE LIMPO */}
+            {/* CONTEÚDO PRINCIPAL: FOTO 3X4 EXATA DE ROSTO (FIXA E AJUSTADA) + DADOS + QR CODE */}
             <div className="grid grid-cols-12 gap-3 items-center relative z-10">
+              {/* FOTO 3X4 E DADOS (ESQUERDA) */}
               <div className="col-span-8 flex items-center gap-3">
-                <img 
-                  src={carteiraModalOpen.fotoRosto} 
-                  alt="Foto Carteira" 
-                  className="w-18 h-22 object-cover rounded-xl border border-white/30 shadow flex-shrink-0" 
-                />
+                <div className="w-20 h-26 rounded-xl overflow-hidden border border-white/40 shadow flex-shrink-0 bg-slate-800">
+                  <img 
+                    src={carteiraModalOpen.fotoRosto} 
+                    alt="Foto 3x4 do Membro" 
+                    className="w-full h-full object-cover aspect-[3/4]" 
+                  />
+                </div>
+
                 <div className="space-y-1.5 overflow-hidden">
                   <div>
                     <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider block">MEMBRO TITULAR</span>
@@ -567,7 +577,7 @@ export default function SecretariaMembrosPage() {
               </div>
             </div>
 
-            {/* APENAS O BOTÃO SALVAR NA GALERIA */}
+            {/* BOTÃO SALVAR NA GALERIA */}
             <div className="pt-2 relative z-10">
               <button 
                 onClick={() => window.print()}
