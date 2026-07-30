@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Sparkles
 } from 'lucide-react';
+import JouleGlobalWidget from '../../components/JouleGlobalWidget';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="min-h-screen bg-[#F6F9FC] flex">
+    <div className="min-h-screen bg-[#F6F9FC] flex relative">
       {/* SIDEBAR STRIPE LIGHT */}
       <aside className="w-64 bg-white border-r border-[#E6EBF1] flex flex-col justify-between p-4 shrink-0 shadow-sm">
         <div className="space-y-6">
@@ -96,6 +97,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 p-8 overflow-y-auto">
         {children}
       </main>
+
+      {/* JOULE GLOBAL FLOATING WIDGET FIXO NO CANTO DIREITO DE TODAS AS PAGINAS */}
+      <JouleGlobalWidget />
     </div>
   );
 }
