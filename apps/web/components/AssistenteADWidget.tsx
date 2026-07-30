@@ -91,42 +91,42 @@ export default function AssistenteADWidget() {
 
   return (
     <>
-      {/* CARD FLUTUANTE FIXO NO CANTO DIREITO (ASSISTENTE AD COM DEGRADÊ LEVE) */}
+      {/* CARD FLUTUANTE FIXO NO CANTO DIREITO (ASSISTENTE AD COM DEGRADÊ LEVE MAGENTA/ROXO/AZUL) */}
       {isOpen && (
         <div className={`fixed bottom-24 right-6 z-50 w-96 bg-white rounded-3xl border border-[#E6EBF1] shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
           isMinimized ? 'h-16' : 'h-[560px]'
         }`}>
-          {/* CABEÇALHO COM DEGRADÊ BEM LEVE E SUAVE FIEL AO PRINT */}
-          <div className="bg-flame-soft text-[#0A2540] p-5 space-y-3 relative border-b border-slate-200 flex-shrink-0">
+          {/* CABEÇALHO COM DEGRADÊ LEVE NO TOM ROXO MAGENTA DA LOGO */}
+          <div className="bg-flame-magenta text-white p-5 space-y-3 relative overflow-hidden flex-shrink-0">
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-2.5">
                 <div className="relative">
-                  <div className="w-8.5 h-8.5 rounded-full flame-border-soft p-[1.5px] shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-white p-[1.5px] shadow-md">
                     <img 
                       src="/logo.jpg" 
                       alt="Assembleia de Deus" 
                       className="w-full h-full rounded-full object-cover" 
                     />
                   </div>
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 absolute -top-1 -right-1" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1 -right-1 animate-spin" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-[#0A2540] leading-none">Assistente AD</h3>
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Assembleia de Deus IA</span>
+                  <h3 className="font-extrabold text-sm text-white leading-none tracking-wide">Assistente AD</h3>
+                  <span className="text-[9px] text-purple-200 font-semibold">Assembleia de Deus IA</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-1">
                 <button 
                   onClick={() => setIsMinimized(!isMinimized)} 
-                  className="p-1 rounded-lg hover:bg-slate-200/60 text-slate-600 cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-white/20 text-white/90 cursor-pointer"
                   title="Minimizar"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => setIsOpen(false)} 
-                  className="p-1 rounded-lg hover:bg-slate-200/60 text-slate-600 cursor-pointer"
+                  className="p-1 rounded-lg hover:bg-white/20 text-white/90 cursor-pointer"
                   title="Fechar"
                 >
                   <X className="w-4 h-4" />
@@ -136,16 +136,16 @@ export default function AssistenteADWidget() {
 
             {!isMinimized && (
               <div className="space-y-2 pt-1 relative z-10">
-                <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-600">
+                <div className="flex items-center justify-between text-[10px] font-extrabold text-purple-100">
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> 
+                    <CheckCircle2 className="w-3 h-3 text-emerald-300" /> 
                     WhatsApp sincronizado • Gemini conectado
                   </span>
-                  <button onClick={() => setMessages([messages[0]])} className="hover:text-slate-900" title="Limpar"><RefreshCw className="w-3 h-3" /></button>
+                  <button onClick={() => setMessages([messages[0]])} className="hover:text-white" title="Limpar"><RefreshCw className="w-3 h-3" /></button>
                 </div>
                 
-                <div className="bg-white/90 text-[#0A2540] p-2.5 rounded-xl border border-slate-200 shadow-sm text-[11px] font-semibold text-center">
-                  Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-blue-700">“Exibir membros”</span> ou <span className="font-extrabold text-indigo-700">“Saldo Sicredi”</span>.
+                <div className="bg-white/95 text-[#0A2540] p-2.5 rounded-xl border border-white/40 shadow-sm text-[11px] font-semibold text-center">
+                  Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-purple-700">“Exibir membros”</span> ou <span className="font-extrabold text-blue-700">“Saldo Sicredi”</span>.
                 </div>
               </div>
             )}
@@ -160,7 +160,7 @@ export default function AssistenteADWidget() {
                   <button
                     key={idx}
                     onClick={() => handleSendPrompt(pill)}
-                    className="px-2.5 py-1 rounded-xl bg-white border border-[#E6EBF1] text-[#0A2540] text-[10px] font-extrabold hover:bg-slate-100 hover:border-brand-blue shadow-stripe-sm transition-all cursor-pointer flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-xl bg-white border border-[#E6EBF1] text-[#0A2540] text-[10px] font-extrabold hover:bg-slate-100 hover:border-purple-600 shadow-stripe-sm transition-all cursor-pointer flex items-center gap-1"
                   >
                     {pill} <ChevronRight className="w-3 h-3 text-slate-400" />
                   </button>
@@ -186,8 +186,8 @@ export default function AssistenteADWidget() {
                 ))}
 
                 {loading && (
-                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-indigo-600 animate-pulse p-1">
-                    <Sparkles className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                  <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-purple-600 animate-pulse p-1">
+                    <Sparkles className="w-3.5 h-3.5 animate-spin text-purple-600" />
                     <span>Assistente AD processando com IA Gemini...</span>
                   </div>
                 )}
@@ -201,13 +201,13 @@ export default function AssistenteADWidget() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Pergunte ao Assistente..."
-                    className="w-full h-10 pl-3 pr-20 rounded-xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-indigo-600"
+                    className="w-full h-10 pl-3 pr-20 rounded-xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-purple-600"
                   />
                   <div className="absolute right-1.5 flex items-center gap-1">
                     <button 
                       type="submit" 
                       disabled={loading || !prompt.trim()} 
-                      className="w-7 h-7 rounded-lg flame-border-soft text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
+                      className="w-7 h-7 rounded-lg bg-flame-magenta text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </button>
@@ -219,25 +219,25 @@ export default function AssistenteADWidget() {
         </div>
       )}
 
-      {/* BOTÃO FLUTUANTE NO CANTO INFERIOR DIREITO COM BORDA DE DEGRADÊ LEVE */}
+      {/* BOTÃO FLUTUANTE NO CANTO INFERIOR DIREITO COM BORDA MAGENTA ROXO */}
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => { setIsOpen(!isOpen); setIsMinimized(false); }}
-          className="relative group p-1 rounded-full bg-white shadow-2xl hover:scale-110 transition-transform cursor-pointer flex items-center justify-center border border-[#E6EBF1]"
+          className="relative group p-1 rounded-full bg-flame-magenta shadow-2xl hover:scale-110 transition-transform cursor-pointer flex items-center justify-center"
           title="Abrir Assistente AD"
         >
-          <span className="absolute -inset-1 rounded-full flame-border-soft opacity-60 blur group-hover:opacity-100 transition duration-500" />
+          <span className="absolute -inset-1 rounded-full bg-flame-magenta opacity-75 blur animate-pulse group-hover:opacity-100 transition duration-500" />
           
-          <div className="relative w-12 h-12 rounded-full bg-white border-2 border-white flex items-center justify-center p-0.5 overflow-hidden shadow-inner">
+          <div className="relative w-12 h-12 rounded-full bg-[#0A2540] border-2 border-white flex items-center justify-center p-0.5 overflow-hidden shadow-lg">
             <img 
               src="/logo.jpg" 
               alt="Logo Assembleia de Deus" 
               className="w-full h-full rounded-full object-cover" 
             />
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600 absolute -top-0.5 -right-0.5" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-0.5 -right-0.5" />
           </div>
 
-          <span className="absolute -top-2 -left-2 flame-border-soft text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-white shadow">
+          <span className="absolute -top-2 -left-2 bg-flame-magenta text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-white shadow">
             Assistente
           </span>
         </button>

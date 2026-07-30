@@ -90,9 +90,9 @@ export default function AssistenteADPage() {
       {/* HEADER DE STATUS DO ASSISTENTE AD */}
       <div className="bg-white rounded-2xl p-5 border border-[#E6EBF1] shadow-stripe flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl flame-border-soft p-[1px] shadow border border-white/20">
-            <div className="w-full h-full bg-white rounded-2xl flex items-center justify-center text-brand-blue">
-              <Sparkles className="w-5 h-5 text-indigo-600" />
+          <div className="w-10 h-10 rounded-2xl bg-flame-magenta p-[1px] shadow border border-white/20">
+            <div className="w-full h-full bg-[#0A2540] rounded-2xl flex items-center justify-center text-white">
+              <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
           </div>
           <div>
@@ -123,32 +123,26 @@ export default function AssistenteADPage() {
         </div>
       </div>
 
-      {/* CARD CENTRAL DO ASSISTENTE AD COM DEGRADÊ LEVE E LIMPO */}
+      {/* CARD CENTRAL DO ASSISTENTE AD COM DEGRADÊ LEVE ROXO/MAGENTA DA LOGO */}
       <div className="bg-white rounded-3xl border border-[#E6EBF1] shadow-2xl overflow-hidden">
-        <div className="bg-flame-soft text-[#0A2540] p-8 space-y-6 relative overflow-hidden border-b border-slate-200">
+        <div className="bg-flame-magenta text-white p-8 space-y-6 relative overflow-hidden">
           <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-extrabold tracking-wide text-[#0A2540]">Assistente AD</h2>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold">Assembleia de Deus IA</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center justify-center text-center space-y-4 py-2 relative z-10">
-            <div className="relative">
-              <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center border border-slate-200 shadow-xl transform rotate-45">
-                <Sparkles className="w-10 h-10 text-indigo-600 -rotate-45" />
+            <div className="flex items-center gap-3">
+              <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-full border-2 border-white object-cover shadow" />
+              <div>
+                <h2 className="text-lg font-extrabold tracking-wide text-white">Assistente AD</h2>
+                <span className="text-[10px] text-purple-200 font-extrabold">Assembleia de Deus IA</span>
               </div>
-              <Sparkles className="w-5 h-5 text-rose-500 absolute -top-2 -right-2 animate-pulse" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-2xl font-extrabold text-[#0A2540]">Paz do Senhor, Pastor!</h3>
-              <p className="text-xl font-bold text-slate-600">Como posso ajudar você agora?</p>
             </div>
           </div>
 
-          <div className="bg-white/90 text-[#0A2540] p-4 rounded-2xl border border-slate-200 shadow-sm text-xs font-semibold text-center relative z-10">
-            Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-blue-700">“Exibir membros”</span> ou <span className="font-extrabold text-indigo-700">“Saldo Sicredi”</span>.
+          <div className="flex flex-col items-center justify-center text-center space-y-2 py-2 relative z-10">
+            <h3 className="text-2xl font-extrabold text-white">Paz do Senhor, Pastor!</h3>
+            <p className="text-lg font-semibold text-purple-100">Como posso ajudar você agora?</p>
+          </div>
+
+          <div className="bg-white/95 text-[#0A2540] p-4 rounded-2xl border border-white/40 shadow-lg text-xs font-semibold text-center relative z-10">
+            Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-purple-700">“Exibir membros”</span> ou <span className="font-extrabold text-blue-700">“Saldo Sicredi”</span>.
           </div>
         </div>
 
@@ -159,7 +153,7 @@ export default function AssistenteADPage() {
               <button
                 key={idx}
                 onClick={() => handleSendPrompt(pill)}
-                className="px-4 py-2 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] text-xs font-extrabold hover:bg-slate-100 hover:border-brand-blue shadow-stripe-sm transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-2xl bg-white border border-[#E6EBF1] text-[#0A2540] text-xs font-extrabold hover:bg-slate-100 hover:border-purple-600 shadow-stripe-sm transition-all cursor-pointer flex items-center gap-1.5"
               >
                 {pill} <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               </button>
@@ -184,8 +178,8 @@ export default function AssistenteADPage() {
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-xs font-extrabold text-indigo-600 animate-pulse p-2">
-                <Sparkles className="w-4 h-4 animate-spin text-rose-500" />
+              <div className="flex items-center gap-2 text-xs font-extrabold text-purple-600 animate-pulse p-2">
+                <Sparkles className="w-4 h-4 animate-spin text-purple-600" />
                 <span>Assistente AD processando com IA Gemini...</span>
               </div>
             )}
@@ -198,14 +192,14 @@ export default function AssistenteADPage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Pergunte ao Assistente..."
-                className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-indigo-600"
+                className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-purple-600"
               />
 
               <div className="absolute right-2 flex items-center gap-1">
                 <button 
                   type="submit" 
                   disabled={loading || !prompt.trim()} 
-                  className="w-8 h-8 rounded-xl flame-border-soft text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-flame-magenta text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
