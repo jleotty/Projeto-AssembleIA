@@ -124,10 +124,25 @@ def main():
         cep = f"{random.randint(10000,99999):05d}-{random.randint(100,999):03d}"
         data_cad = random_date_iso(2025, 2026)
 
+        caminho_rosto = f"/uploads/membros/carteirinha/{num_str}_rosto.jpg"
+        caminho_corpo = f"/uploads/membros/banner/{num_str}_corpo.jpg"
+
         # Insert Membro
         sql_statements.append(
-            f"INSERT INTO membros (id, numero_membro, congregacao_id, nome_completo, data_nascimento, sexo, estado_civil, cpf, rg, telefone, whatsapp, email, endereco, numero, bairro, cidade, estado, cep, ativo, data_cadastro) VALUES "
-            f"({i}, '{num_membro}', {cong_id}, '{nome}', '{data_nasc}', '{sexo}', '{estado_civil}', '{cpf}', '{rg}', '{fone}', '{fone}', '{email}', '{end}', '{random.randint(1,500)}', '{bairro}', 'São Paulo', 'SP', '{cep}', 1, '{data_cad}');"
+            f"INSERT INTO membros (id, numero_membro, congregacao_id, nome_completo, data_nascimento, sexo, estado_civil, cpf, rg, telefone, whatsapp, email, endereco, numero, bairro, cidade, estado, cep, foto, ativo, data_cadastro) VALUES "
+            f"({i}, '{num_membro}', {cong_id}, '{nome}', '{data_nasc}', '{sexo}', '{estado_civil}', '{cpf}', '{rg}', '{fone}', '{fone}', '{email}', '{end}', '{random.randint(1,500)}', '{bairro}', 'São Paulo', 'SP', '{cep}', '{caminho_rosto}', 1, '{data_cad}');"
+        )
+
+        # FOTO 1: CARTEIRINHA (Rosto 3x4 Obrigatória)
+        sql_statements.append(
+            f"INSERT INTO fotos_membros (membro_id, tipo, arquivo, caminho, extensao, principal) VALUES "
+            f"({i}, 'CARTEIRINHA', '{num_str}_rosto.jpg', '{caminho_rosto}', 'jpg', 1);"
+        )
+
+        # FOTO 2: BANNER (Corpo Inteiro Opcional)
+        sql_statements.append(
+            f"INSERT INTO fotos_membros (membro_id, tipo, arquivo, caminho, extensao, principal) VALUES "
+            f"({i}, 'BANNER', '{num_str}_corpo.jpg', '{caminho_corpo}', 'jpg', 0);"
         )
 
         # 60% tem familiares
@@ -171,12 +186,6 @@ def main():
             f"({i}, {conv_str}, {bat_aguas}, {bat_str}, '{igreja_bat}', {bat_espirito}, {veio_outra}, '{igreja_ant}');"
         )
 
-        # Foto do membro
-        sql_statements.append(
-            f"INSERT INTO fotos_membros (membro_id, arquivo, caminho, extensao, principal) VALUES "
-            f"({i}, '{num_str}.jpg', 'uploads/membros/{num_str}.jpg', 'jpg', 1);"
-        )
-
         # Carteirinha
         dt_emissao = random_date_iso(2024, 2026)
         year_em = int(dt_emissao[:4])
@@ -199,7 +208,7 @@ def main():
         # Histórico
         sql_statements.append(
             f"INSERT INTO historico_membros (membro_id, usuario_id, acao, descricao, data) VALUES "
-            f"({i}, 1, 'Abertura de cadastro', 'Cadastro inicial importado no sistema', '{data_cad}');"
+            f"({i}, 1, 'Abertura de cadastro', 'Cadastro inicial com fotos ficticias de carteirinha (rosto) e banner (corpo inteiro)', '{data_cad}');"
         )
 
         # Atribuição aos ministérios
@@ -234,7 +243,7 @@ def main():
     with open("/home/julian/Documentos/Projeto AssembleIA/seed_igreja_assembleia.sql", "w", encoding="utf-8") as f:
         f.write("\n".join(sql_statements))
 
-    print("✅ seed_igreja_assembleia.sql atualizado com ISO-8601 strings para Prisma SQLite!")
+    print("✅ seed_igreja_assembleia.sql gerado com fotos fictícias para 800 membros (Rosto Carteirinha + Corpo Inteiro Banner)!")
 
 if __name__ == "__main__":
     main()
