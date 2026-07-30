@@ -6,10 +6,7 @@ import {
   Send, 
   RefreshCw, 
   CheckCircle2, 
-  X, 
-  Minus, 
-  ChevronRight,
-  Maximize2
+  ChevronRight
 } from 'lucide-react';
 
 export default function AssistenteADPage() {
@@ -93,7 +90,7 @@ export default function AssistenteADPage() {
       {/* HEADER DE STATUS DO ASSISTENTE AD */}
       <div className="bg-white rounded-2xl p-5 border border-[#E6EBF1] shadow-stripe flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#635BFF] via-[#7928CA] to-[#FF0080] p-[1px] shadow">
+          <div className="w-10 h-10 rounded-2xl bg-mesh-3d p-[1px] shadow border border-white/20">
             <div className="w-full h-full bg-[#0A2540] rounded-2xl flex items-center justify-center text-white">
               <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
@@ -126,9 +123,9 @@ export default function AssistenteADPage() {
         </div>
       </div>
 
-      {/* CARD CENTRAL DO ASSISTENTE AD */}
+      {/* CARD CENTRAL DO ASSISTENTE AD COM TEXTURA 3D MESH GRADIENT FIEL AO PRINT */}
       <div className="bg-white rounded-3xl border border-[#E6EBF1] shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-br from-[#635BFF] via-[#7928CA] to-[#635BFF] text-white p-8 space-y-6 relative overflow-hidden">
+        <div className="bg-mesh-3d text-white p-8 space-y-6 relative overflow-hidden">
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-extrabold tracking-wide">Assistente AD</h2>
@@ -150,8 +147,8 @@ export default function AssistenteADPage() {
             </div>
           </div>
 
-          <div className="bg-white/95 text-[#0A2540] p-4 rounded-2xl border border-white/40 shadow-lg text-xs font-semibold text-center relative z-10">
-            Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-brand-blue">“Exibir membros”</span> ou <span className="font-extrabold text-purple-600">“Saldo Sicredi”</span>.
+          <div className="mesh-3d-overlay text-white p-4 rounded-2xl border border-white/30 shadow-lg text-xs font-semibold text-center relative z-10">
+            Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-amber-300">“Exibir membros”</span> ou <span className="font-extrabold text-cyan-300">“Saldo Sicredi”</span>.
           </div>
         </div>
 
@@ -187,8 +184,8 @@ export default function AssistenteADPage() {
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-xs font-extrabold text-purple-600 animate-pulse p-2">
-                <Sparkles className="w-4 h-4 animate-spin" />
+              <div className="flex items-center gap-2 text-xs font-extrabold text-brand-blue animate-pulse p-2">
+                <Sparkles className="w-4 h-4 animate-spin text-amber-500" />
                 <span>Assistente AD processando com IA Gemini...</span>
               </div>
             )}
@@ -201,14 +198,14 @@ export default function AssistenteADPage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Pergunte ao Assistente..."
-                className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-purple-600"
+                className="w-full h-12 pl-4 pr-16 rounded-2xl bg-white border border-[#E6EBF1] text-xs font-bold text-[#0A2540] shadow-sm focus:outline-none focus:border-brand-blue"
               />
 
               <div className="absolute right-2 flex items-center gap-1">
                 <button 
                   type="submit" 
                   disabled={loading || !prompt.trim()} 
-                  className="w-8 h-8 rounded-xl bg-gradient-to-r from-[#635BFF] to-[#7928CA] text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-flame-gradient text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>
