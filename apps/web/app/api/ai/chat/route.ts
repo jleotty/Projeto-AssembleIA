@@ -6,7 +6,7 @@ const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:808
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || 'Jaera@2020';
 const INSTANCE_NAME = 'assembleia_whatsapp';
 
-// POST /api/ai/chat — Endpoint do Joule Copilot acionado pela IA Gemini
+// POST /api/ai/chat — Endpoint do Assistente AD acionado pela IA Gemini
 export async function POST(request: Request) {
   try {
     const { prompt } = await request.json();
@@ -47,7 +47,7 @@ Dados Gerais da Igreja Assembleia de Deus:
 
     // 3. Processar via Google Gemini IA
     let aiResponse = '';
-    const systemInstruction = `Você é o Joule, o Co-piloto de Inteligência Artificial Oficial da Igreja Assembleia de Deus. Responda em português, de forma altamente profissional, útil, direta e respeitosa. Use os dados reais da igreja fornecidos no contexto.`;
+    const systemInstruction = `Você é o Assistente AD, o auxiliar de Inteligência Artificial Oficial da Igreja Assembleia de Deus. Responda em português brasileiro de forma formal, respeitosa, acolhedora e direta, dirigida sempre com o tratamento "Pastor". Use os dados reais da igreja fornecidos no contexto.`;
 
     if (GEMINI_API_KEY) {
       try {
@@ -68,20 +68,20 @@ Dados Gerais da Igreja Assembleia de Deus:
         const geminiData = await geminiRes.json();
         aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
       } catch (err) {
-        console.error('Erro na chamada Gemini do Joule:', err);
+        console.error('Erro na chamada Gemini do Assistente AD:', err);
       }
     }
 
     // Fallback assertivo se Gemini exceder limite de requisição
     if (!aiResponse) {
       if (textLower.includes('membro') || textLower.includes('rol')) {
-        aiResponse = `Atualmente a igreja conta com ${totalMembros} membros ativos cadastrados no rol oficial.`;
+        aiResponse = `Paz do Senhor, Pastor! Atualmente a igreja conta com ${totalMembros} membros ativos cadastrados no rol oficial.`;
       } else if (textLower.includes('financeiro') || textLower.includes('saldo') || textLower.includes('sicredi')) {
-        aiResponse = `O saldo financeiro atual é de R$ ${(bankTx._sum.valor || 50550).toFixed(2)} conciliados via Sicredi.`;
+        aiResponse = `Paz do Senhor, Pastor! O saldo financeiro atual é de R$ ${(bankTx._sum.valor || 50550).toFixed(2)} conciliados via Sicredi.`;
       } else if (textLower.includes('escala') || textLower.includes('culto')) {
-        aiResponse = `Próxima escala agendada: ${proximaEscala?.departamento || 'Louvor'} para o próximo culto oficial.`;
+        aiResponse = `Paz do Senhor, Pastor! A próxima escala agendada é para o ministério de ${proximaEscala?.departamento || 'Louvor'}.`;
       } else {
-        aiResponse = `Joule AI: Conectado à Assembleia de Deus (${whatsappConnected ? 'WhatsApp Ativo' : 'WhatsApp Desconectado'}). Total de membros: ${totalMembros}. Saldo: R$ ${(bankTx._sum.valor || 50550).toFixed(2)}.`;
+        aiResponse = `Paz do Senhor, Pastor! Sou o Assistente AD. WhatsApp ${whatsappConnected ? 'Sincronizado' : 'Aguardando conexão'}. Total de membros: ${totalMembros}. Saldo Sicredi: R$ ${(bankTx._sum.valor || 50550).toFixed(2)}.`;
       }
     }
 

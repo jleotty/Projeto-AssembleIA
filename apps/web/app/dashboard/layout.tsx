@@ -13,7 +13,7 @@ import {
   MessageSquare,
   Sparkles
 } from 'lucide-react';
-import JouleGlobalWidget from '../../components/JouleGlobalWidget';
+import AssistenteADWidget from '../../components/AssistenteADWidget';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'WhatsApp (Evolution)', href: '/dashboard/whatsapp', icon: MessageSquare },
     { name: 'Financeiro & Sicredi', href: '/dashboard/financeiro', icon: Wallet },
     { name: 'Escalas & Eventos', href: '/dashboard/escalas', icon: Calendar },
-    { name: 'Agente Mestre (IA)', href: '/dashboard/agente-mestre', icon: Bot },
+    { name: 'Assistente AD (IA)', href: '/dashboard/agente-mestre', icon: Bot },
   ];
 
   return (
@@ -98,8 +98,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      {/* JOULE GLOBAL FLOATING WIDGET FIXO NO CANTO DIREITO DE TODAS AS PAGINAS */}
-      <JouleGlobalWidget />
+      {/* ASSISTENTE AD GLOBAL FLOATING WIDGET FIXO NO CANTO DIREITO DE TODAS AS PAGINAS */}
+      <AssistenteADWidget />
     </div>
   );
 }
