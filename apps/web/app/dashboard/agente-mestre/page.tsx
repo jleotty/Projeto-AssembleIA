@@ -90,7 +90,7 @@ export default function AssistenteADPage() {
       {/* HEADER DE STATUS DO ASSISTENTE AD */}
       <div className="bg-white rounded-2xl p-5 border border-[#E6EBF1] shadow-stripe flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-mesh-3d p-[1px] shadow border border-white/20">
+          <div className="w-10 h-10 rounded-2xl bg-flame-logo p-[1px] shadow border border-white/20">
             <div className="w-full h-full bg-[#0A2540] rounded-2xl flex items-center justify-center text-white">
               <Sparkles className="w-5 h-5 text-amber-300" />
             </div>
@@ -123,9 +123,9 @@ export default function AssistenteADPage() {
         </div>
       </div>
 
-      {/* CARD CENTRAL DO ASSISTENTE AD COM TEXTURA 3D MESH GRADIENT FIEL AO PRINT */}
+      {/* CARD CENTRAL DO ASSISTENTE AD COM GRADIENTE DA LOGO DA CHAMA */}
       <div className="bg-white rounded-3xl border border-[#E6EBF1] shadow-2xl overflow-hidden">
-        <div className="bg-mesh-3d text-white p-8 space-y-6 relative overflow-hidden">
+        <div className="bg-mesh-logo text-white p-8 space-y-6 relative overflow-hidden">
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-extrabold tracking-wide">Assistente AD</h2>
@@ -148,7 +148,7 @@ export default function AssistenteADPage() {
           </div>
 
           <div className="mesh-3d-overlay text-white p-4 rounded-2xl border border-white/30 shadow-lg text-xs font-semibold text-center relative z-10">
-            Fale comigo naturalmente. Exemplos: <span className="font-extrabold text-amber-300">“Exibir membros”</span> ou <span className="font-extrabold text-cyan-300">“Saldo Sicredi”</span>.
+            Fale comigo naturally. Exemplos: <span className="font-extrabold text-amber-300">“Exibir membros”</span> ou <span className="font-extrabold text-cyan-200">“Saldo Sicredi”</span>.
           </div>
         </div>
 
@@ -205,7 +205,7 @@ export default function AssistenteADPage() {
                 <button 
                   type="submit" 
                   disabled={loading || !prompt.trim()} 
-                  className="w-8 h-8 rounded-xl bg-flame-gradient text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
+                  className="w-8 h-8 rounded-xl bg-flame-logo text-white flex items-center justify-center shadow hover:scale-105 transition-transform cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                 </button>

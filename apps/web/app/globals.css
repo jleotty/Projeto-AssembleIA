@@ -22,29 +22,27 @@
 }
 
 .flame-text {
-  background: linear-gradient(135deg, #00B2FE 0%, #2B35AF 35%, #F04A23 75%, #FEE100 100%);
+  background: linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.flame-badge {
-  background: linear-gradient(135deg, rgba(0,178,254,0.1), rgba(43,53,175,0.1));
-  border: 1px solid rgba(0,178,254,0.2);
-  color: #2B35AF;
+/* GRADIENTE EXATO DA LOGO DA CHAMA (AZUL CELESTE -> AZUL ESCURO -> VERMELHO -> LARANJA CHAMA -> AMARELO DOURADO) */
+.bg-flame-logo {
+  background: linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
 }
 
-/* TEXTURA 3D MESH GRADIENT EM PORTUGUÊS (AZUL, ROXO, CHAMA LARANJA E AMARELO DA ASSEMBLEIA) */
-.bg-mesh-3d {
-  background-color: #0A2540;
+.bg-mesh-logo {
+  background-color: #0F172A;
   background-image: 
-    radial-gradient(at 5% 5%, rgba(0, 178, 254, 0.85) 0px, transparent 55%),
-    radial-gradient(at 50% 0%, rgba(43, 53, 175, 0.9) 0px, transparent 55%),
-    radial-gradient(at 95% 25%, rgba(240, 74, 35, 0.85) 0px, transparent 55%),
-    radial-gradient(at 85% 95%, rgba(254, 225, 0, 0.75) 0px, transparent 55%),
-    linear-gradient(135deg, #0A2540 0%, #2B35AF 40%, #F04A23 75%, #FEE100 100%);
+    radial-gradient(at 0% 0%, rgba(0, 114, 206, 0.95) 0px, transparent 55%),
+    radial-gradient(at 40% 10%, rgba(63, 81, 181, 0.95) 0px, transparent 55%),
+    radial-gradient(at 80% 30%, rgba(211, 47, 47, 0.9) 0px, transparent 55%),
+    radial-gradient(at 95% 95%, rgba(255, 214, 0, 0.85) 0px, transparent 55%),
+    linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
 }
 
 .mesh-3d-overlay {
-  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 100%);
   backdrop-filter: blur(16px);
 }
