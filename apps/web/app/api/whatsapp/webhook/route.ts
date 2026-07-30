@@ -25,8 +25,8 @@ export async function POST(request: Request) {
     const fromMe = key.fromMe;
     const remoteJid = key.remoteJid || data.remoteJid;
 
-    if (fromMe || !remoteJid) {
-      return NextResponse.json({ success: true, message: 'Mensagem enviada por mim ou JID inválido' });
+    if (!remoteJid) {
+      return NextResponse.json({ success: true, message: 'JID inválido' });
     }
 
     const senderPhone = remoteJid.split('@')[0];
@@ -36,6 +36,11 @@ export async function POST(request: Request) {
 
     if (!messageContent) {
       return NextResponse.json({ success: true, message: 'Sem conteúdo de texto' });
+    }
+
+    // EVITAR LOOP DE AUTO-RESPOSTA: Se a mensagem foi enviada por mim e contem saudacao da IA, ignorar
+    if (fromMe && (messageContent.includes('Assistente AD') || messageContent.includes('Assistente AssembleIA') || messageContent.includes('Paz do Senhor, Pastor!'))) {
+      return NextResponse.json({ success: true, message: 'Ignorada auto-resposta enviada pela IA' });
     }
 
     // 1. Contexto do Membro no SQLite
@@ -72,7 +77,7 @@ export async function POST(request: Request) {
 
     // 3. Processamento via Google Gemini IA (Token fornecido)
     let aiReplyText = '';
-    const systemPrompt = `Você é o Assistente AssembleIA da Igreja Assembleia de Deus. Responda em português, de forma curta (máximo 3 frases), direta, respeitosa e assertiva. Nunca invente dados. Contexto: ${contextStr} ${dbInfo}`;
+    const systemPrompt = `Você é o Assistente AD da Igreja Assembleia de Deus. Responda em português brasileiro de forma formal, respeitosa, curta (máximo 3 frases) e acolhedora. Contexto: ${contextStr} ${dbInfo}`;
 
     if (GEMINI_API_KEY) {
       try {
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fallback via Hugging Face ou resposta direta do banco caso Gemini exceda cota
+    // Fallback via Hugging Face ou resposta direta do banco
     if (!aiReplyText && HF_TOKEN) {
       try {
         const hfRes = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
@@ -125,7 +130,7 @@ export async function POST(request: Request) {
     }
 
     if (!aiReplyText) {
-      aiReplyText = dbInfo || `Paz do Senhor! Sou o Assistente AssembleIA. Recebi sua mensagem: "${messageContent}". Como posso ajudar?`;
+      aiReplyText = dbInfo || `Paz do Senhor, Pastor! Sou o Assistente AD. Recebi sua mensagem: "${messageContent}". Como posso ajudar?`;
     }
 
     // 4. Enviar resposta para o WhatsApp via Evolution API
@@ -137,7 +142,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         number: senderPhone,
-        text: aiReplyText,
+        text: `Assistente AD:\n${aiReplyText}`,
       }),
     });
 
