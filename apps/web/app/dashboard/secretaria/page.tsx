@@ -22,6 +22,28 @@ import {
   Download
 } from 'lucide-react';
 
+// HELPER: MÁSCARA AUTOMÁTICA DE CPF (XXX.XXX.XXX-XX)
+function maskCPF(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+}
+
+// HELPER: MÁSCARA AUTOMÁTICA DE TELEFONE COM PREFIXO 55 (+55 (XX) XXXXX-XXXX)
+function maskPhone55(value: string): string {
+  let digits = value.replace(/\D/g, '');
+  if (digits.length > 0 && !digits.startsWith('55')) {
+    digits = '55' + digits;
+  }
+  digits = digits.slice(0, 13);
+  if (digits.length <= 2) return `+${digits}`;
+  if (digits.length <= 4) return `+${digits.slice(0, 2)} (${digits.slice(2)}`;
+  if (digits.length <= 9) return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4)}`;
+  return `+${digits.slice(0, 2)} (${digits.slice(2, 4)}) ${digits.slice(4, 9)}-${digits.slice(9, 13)}`;
+}
+
 export default function SecretariaMembrosPage() {
   const [membros, setMembros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,7 +152,7 @@ export default function SecretariaMembrosPage() {
       estadoCivil: 'Solteiro',
       cpf: '',
       rg: '',
-      telefone: '',
+      telefone: '+55 ',
       email: '',
       endereco: '',
       numero: '',
@@ -172,9 +194,9 @@ export default function SecretariaMembrosPage() {
       dataNascimento: m.dataNascimento ? new Date(m.dataNascimento).toISOString().slice(0, 10) : '',
       sexo: m.sexo || 'Masculino',
       estadoCivil: m.estadoCivil || 'Solteiro',
-      cpf: m.cpf || '',
+      cpf: m.cpf ? maskCPF(m.cpf) : '',
       rg: m.rg || '',
-      telefone: m.telefone || m.whatsapp || '',
+      telefone: m.telefone || m.whatsapp ? maskPhone55(m.telefone || m.whatsapp) : '+55 ',
       email: m.email || '',
       endereco: m.endereco || '',
       numero: m.numero || '',
@@ -200,7 +222,7 @@ export default function SecretariaMembrosPage() {
       talentos: m.observacoes?.[0]?.talentos || '',
       necessidadesEspeciais: m.observacoes?.[0]?.necessidadesEspeciais || '',
       contatoEmergencia: m.observacoes?.[0]?.contatoEmergencia || '',
-      telefoneEmergencia: m.observacoes?.[0]?.telefoneEmergencia || '',
+      telefoneEmergencia: m.observacoes?.[0]?.telefoneEmergencia ? maskPhone55(m.observacoes[0].telefoneEmergencia) : '',
     });
     setErroFoto('');
     setModalCadastroOpen(true);
@@ -252,7 +274,7 @@ export default function SecretariaMembrosPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* HEADER DA SECRETARIA COM REMOÇÃO DA PALAVRA "SQLITE" */}
+      {/* HEADER DA SECRETARIA */}
       <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -298,7 +320,7 @@ export default function SecretariaMembrosPage() {
         </form>
       </div>
 
-      {/* TABELA DE MEMBROS COM AÇÕES DE EDITAR E EXCLUIR */}
+      {/* TABELA DE MEMBROS */}
       <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -308,7 +330,7 @@ export default function SecretariaMembrosPage() {
                 <th className="py-3 px-4">Registro</th>
                 <th className="py-3 px-4">Nome Completo</th>
                 <th className="py-3 px-4">Congregação</th>
-                <th className="py-3 px-4">Telefone</th>
+                <th className="py-3 px-4">Telefone (55)</th>
                 <th className="py-3 px-4 text-center">Carteirinha & QR Code</th>
                 <th className="py-3 px-4 text-right">Ações</th>
               </tr>
@@ -324,6 +346,8 @@ export default function SecretariaMembrosPage() {
                 const fotoRostoObj = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA');
                 const fotoRosto = fotoRostoObj ? fotoRostoObj.caminho : (m.foto && !m.foto.includes('corpo') ? m.foto : `/uploads/membros/carteirinha/${String(m.id).padStart(6, '0')}_rosto.jpg`);
                 const qrCodeStr = m.carteirinha?.qrCode || `https://assembleia.com/verificar-carteira?membroId=${m.id}&numero=${m.numeroMembro || 'AD-2026-' + String(m.id).padStart(4, '0')}`;
+                const rawTel = m.telefone || m.whatsapp || '';
+                const displayTel = rawTel ? maskPhone55(rawTel) : 'Não informado';
 
                 return (
                   <tr key={m.id} className="hover:bg-slate-50 transition-colors">
@@ -343,8 +367,8 @@ export default function SecretariaMembrosPage() {
                     <td className="py-2.5 px-4 font-semibold text-slate-600">
                       {m.congregacao?.nome || 'Sede Central'}
                     </td>
-                    <td className="py-2.5 px-4 font-semibold text-slate-600">
-                      {m.telefone || m.whatsapp || 'Não informado'}
+                    <td className="py-2.5 px-4 font-semibold text-slate-600 font-mono">
+                      {displayTel}
                     </td>
                     <td className="py-2.5 px-4 text-center">
                       <button 
@@ -389,7 +413,7 @@ export default function SecretariaMembrosPage() {
         </div>
       </div>
 
-      {/* MODAL DE CADASTRO E EDIÇÃO COMPLETA */}
+      {/* MODAL DE CADASTRO E EDIÇÃO COMPLETA COM MÁSCARA AUTOMÁTICA DE TELEFONE (55) E CPF */}
       {modalCadastroOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-4xl w-full border border-[#E6EBF1] shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto">
@@ -461,7 +485,7 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
-              {/* SEÇÃO 1: DADOS PESSOAIS */}
+              {/* SEÇÃO 1: DADOS PESSOAIS COM MÁSCARAS AUTOMÁTICAS (CPF E TELEFONE 55) */}
               <div className="space-y-4 border-t pt-4">
                 <h4 className="font-extrabold text-[#0A2540] text-sm flex items-center gap-2">
                   <User className="w-4 h-4 text-brand-blue" /> 1. Dados Pessoais
@@ -495,12 +519,24 @@ export default function SecretariaMembrosPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-bold text-[#0A2540] mb-1">CPF (Opcional)</label>
-                    <input type="text" value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} placeholder="000.000.000-00" className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold" />
+                    <label className="block font-bold text-[#0A2540] mb-1">CPF (Máscara Automática)</label>
+                    <input 
+                      type="text" 
+                      value={form.cpf} 
+                      onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} 
+                      placeholder="000.000.000-00" 
+                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold font-mono" 
+                    />
                   </div>
                   <div>
-                    <label className="block font-bold text-[#0A2540] mb-1">Telefone / WhatsApp</label>
-                    <input type="text" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(11) 98888-7777" className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold" />
+                    <label className="block font-bold text-[#0A2540] mb-1">Telefone / WhatsApp (Prefixo 55)</label>
+                    <input 
+                      type="text" 
+                      value={form.telefone} 
+                      onChange={(e) => setForm({ ...form, telefone: maskPhone55(e.target.value) })} 
+                      placeholder="+55 (11) 98888-7777" 
+                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold font-mono" 
+                    />
                   </div>
                 </div>
               </div>
@@ -570,7 +606,7 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
-              {/* BOTÃO MANTIDO FIEL: Salvar cadastro */}
+              {/* BOTÃO FIEL: Salvar cadastro */}
               <button 
                 type="submit" 
                 className="w-full py-4 rounded-xl bg-flame-gradient text-white text-sm font-extrabold shadow-lg hover:scale-[1.01] transition-transform cursor-pointer flex items-center justify-center gap-2"
