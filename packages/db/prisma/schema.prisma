@@ -1,4 +1,4 @@
-// Prisma Schema — AssembleIA (Com fotos, carteirinhas, Sicredi, e automações recorrentes no WhatsApp)
+// Prisma Schema — AssembleIA (Com QR Code único na Carteirinha)
 
 generator client {
   provider = "prisma-client-js"
@@ -172,11 +172,11 @@ model Carteirinha {
   validade    DateTime
 
   arquivo     String?
+  qrCode      String?  @map("qr_code") // String base64 ou URL única do QR Code
 
   @@map("carteirinhas")
 }
 
-// STATUS E AUTOMAÇÕES RECORRENTES DO WHATSAPP
 model StatusWhatsapp {
   id            Int      @id @default(autoincrement())
   titulo        String
@@ -184,9 +184,9 @@ model StatusWhatsapp {
   mediaUrl      String?  @map("media_url")
   legenda       String?
   dataAgendada  DateTime @map("data_agendada")
-  recorrencia   String   @default("UNICA") // UNICA, DIARIA, SEMANAL, MENSAL, ANUAL
-  frequenciaDia Int      @default(1) @map("frequencia_dia") // Quantas vezes no dia
-  diasSemana    String?  @map("dias_semana") // DOMINGO,QUARTA,SEXTA
+  recorrencia   String   @default("UNICA")
+  frequenciaDia Int      @default(1) @map("frequencia_dia")
+  diasSemana    String?  @map("dias_semana")
   status        String   @default("PENDENTE")
   criadoEm      DateTime @default(now()) @map("criado_em")
 
@@ -198,7 +198,7 @@ model EscalaAgendada {
   departamento  String
   dataEscala    DateTime @map("data_escala")
   conteudo      String
-  recorrencia   String   @default("SEMANAL") // UNICA, DIARIA, SEMANAL, MENSAL, ANUAL
+  recorrencia   String   @default("SEMANAL")
   frequenciaDia Int      @default(1) @map("frequencia_dia")
   enviada       Int      @default(0)
   criadoEm      DateTime @default(now()) @map("criado_em")

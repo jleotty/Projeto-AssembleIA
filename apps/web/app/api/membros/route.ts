@@ -46,7 +46,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/membros — Cadastro Completo de Membro nas 6 Seções (Foto de carteirinha OBRIGATÓRIA)
+// POST /api/membros — Cadastro de Membro com Foto vinculada à Carteirinha e QR Code Único
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Salvar FotoMembro: BANNER (Opcional, se enviada)
+    // Salvar FotoMembro: BANNER (Opcional)
     if (body.fotoBanner) {
       await db.fotoMembro.create({
         data: {
@@ -119,7 +119,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Gerar Carteirinha Digital
+    // REGRA 3: QR Code Único por Carteirinha
+    // Gerar QR Code único com link de verificação oficial da carteira do membro
+    const qrCodeContent = `https://assembleia.com/verificar-carteira?membroId=${novoMembro.id}&numero=${numeroMembro}`;
+
     await db.carteirinha.create({
       data: {
         membroId: novoMembro.id,
@@ -127,6 +130,7 @@ export async function POST(request: Request) {
         dataEmissao: new Date(),
         validade: new Date(new Date().setFullYear(new Date().getFullYear() + 5)),
         arquivo: `carteirinhas/${numeroMembro}.png`,
+        qrCode: qrCodeContent, // QR Code único salvo no banco de dados
       },
     });
 
@@ -207,7 +211,7 @@ export async function POST(request: Request) {
         membroId: novoMembro.id,
         usuarioId: 1,
         acao: 'Abertura de cadastro',
-        descricao: 'Membro cadastrado com foto de carteirinha obrigatória validada',
+        descricao: 'Membro cadastrado com foto vinculada diretamente a carteirinha e QR Code unico gerado',
       },
     });
 
@@ -215,7 +219,8 @@ export async function POST(request: Request) {
       success: true, 
       message: 'Cadastro realizado com sucesso!',
       numeroMembro,
-      membroId: novoMembro.id
+      membroId: novoMembro.id,
+      qrCode: qrCodeContent
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

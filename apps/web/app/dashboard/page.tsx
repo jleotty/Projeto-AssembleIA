@@ -4,32 +4,28 @@ import {
   Wallet, 
   HeartHandshake, 
   Calendar, 
-  Bot, 
-  ArrowUpRight, 
-  Plus,
-  FileText,
-  UserPlus
+  ArrowUpRight
 } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* WELCOME BANNER STRIPE LIGHT */}
+      {/* WELCOME BANNER STRIPE LIGHT (Sem botão de cadastro de membro) */}
       <div className="relative rounded-2xl bg-white p-8 border border-[#E6EBF1] shadow-stripe">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <span className="text-xs font-bold text-brand-blue uppercase tracking-wider">Painel de Controle — Assembleia de Deus Sede Central</span>
             <h1 className="text-3xl font-extrabold text-[#0A2540] mt-1">Paz do Senhor, Pr. João Oliveira!</h1>
             <p className="text-[#425466] text-sm mt-2 max-w-xl font-medium">
-              Seu banco de dados <span className="text-emerald-700 font-mono font-bold">SQLite (assembleia.db)</span> está rodando localmente.
+              Seu banco de dados <span className="text-emerald-700 font-mono font-bold">SQLite (dev.db)</span> está rodando localmente. O cadastro de membros deve ser realizado exclusivamente na aba <strong>Secretaria e Membros</strong>.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div>
             <Link 
-              href="/cadastro" 
-              className="px-5 py-2.5 rounded-xl bg-flame-gradient text-white font-extrabold text-xs shadow-md shadow-brand-cyan/20 hover:scale-105 transition-transform flex items-center gap-2"
+              href="/dashboard/secretaria" 
+              className="px-5 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-brand-blue font-extrabold text-xs shadow-sm hover:bg-blue-100 transition-colors flex items-center gap-2"
             >
-              <UserPlus className="w-4 h-4" /> Cadastrar Membro
+              Ir para Secretaria e Rol de Membros <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -44,9 +40,9 @@ export default function DashboardPage() {
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold text-[#0A2540]">1.420</div>
+          <div className="text-3xl font-extrabold text-[#0A2540]">801</div>
           <div className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1">
-            <span>↑ +34 este mês</span> <span className="text-slate-500">• 98% ativos</span>
+            <span>↑ 801 cadastrados no SQLite</span>
           </div>
         </div>
 
@@ -57,9 +53,9 @@ export default function DashboardPage() {
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold text-[#0A2540]">R$ 48.950,00</div>
+          <div className="text-3xl font-extrabold text-[#0A2540]">R$ 49.269,50</div>
           <div className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1">
-            <span>↑ 100% conciliado via PIX</span>
+            <span>↑ Conciliado via Sicredi</span>
           </div>
         </div>
 
@@ -95,7 +91,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold text-[#0A2540]">Últimos Membros Cadastrados</h3>
           <Link href="/dashboard/secretaria" className="text-xs text-brand-blue hover:underline flex items-center gap-1 font-bold">
-            Ver todos <ArrowUpRight className="w-3.5 h-3.5" />
+            Ver Rol Completo em Secretaria <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 

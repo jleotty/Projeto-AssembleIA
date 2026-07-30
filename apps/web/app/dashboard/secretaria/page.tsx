@@ -4,77 +4,54 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
-  Search, 
   UserPlus, 
-  Download, 
+  Search, 
+  CreditCard, 
+  QrCode as QrCodeIcon, 
+  FileText, 
   Trash2, 
-  Edit, 
-  RefreshCw,
+  ChevronLeft, 
+  ChevronRight,
+  ShieldCheck,
   X,
-  Send,
-  ChevronLeft,
-  ChevronRight
+  Camera,
+  Upload
 } from 'lucide-react';
 
-interface Membro {
-  id: number;
-  numeroMembro: string;
-  nomeCompleto: string;
-  cpf: string;
-  telefone: string;
-  email: string;
-  congregacao?: { nome: string };
-  membroMinisterios?: { ministerio: { nome: string } }[];
-}
-
-export default function SecretariaAdminPage() {
-  const [membros, setMembros] = useState<Membro[]>([]);
-  const [search, setSearch] = useState('');
+export default function SecretariaMembrosPage() {
+  const [membros, setMembros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
 
+  // Modal de Novo Cadastro (ÚNICO LUGAR DO SISTEMA)
+  const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
+  const [carteiraModalOpen, setCarteiraModalOpen] = useState<any>(null);
+
+  // Form State para Novo Cadastro em Secretaria
   const [form, setForm] = useState({
     nomeCompleto: '',
     dataNascimento: '',
     sexo: 'Masculino',
     estadoCivil: 'Solteiro',
     cpf: '',
-    rg: '',
     telefone: '',
-    email: '',
-    endereco: '',
-    numero: '',
-    bairro: '',
-    cidade: '',
-    estado: 'SP',
-    cep: '',
-    nomePai: '',
-    nomeMae: '',
-    nomeConjuge: '',
-    dataConversao: '',
-    batizadoAguas: 'Não',
-    dataBatismo: '',
-    igrejaBatismo: '',
-    batismoEspiritoSanto: 'Não',
-    veioOutraIgreja: 'Não',
-    igrejaAnterior: '',
-    ministerios: [] as string[],
-    talentos: '',
-    necessidadesEspeciais: '',
-    contatoEmergencia: '',
-    telefoneEmergencia: '',
-    termoCompromisso: true,
+    fotoCarteirinha: '', // OBRIGATÓRIA 3X4
+    fotoBanner: '',      // OPCIONAL
   });
 
-  const fetchMembros = async (query = '') => {
+  const [erroFoto, setErroFoto] = useState('');
+
+  const fetchMembros = async (p = 1, q = '') => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/membros?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/membros?page=${p}&limit=${limit}&q=${q}`);
       const data = await res.json();
       if (data.success) {
         setMembros(data.data);
+        setTotal(data.total);
       }
     } catch (e) {
       console.error('Erro ao buscar membros:', e);
@@ -84,333 +61,396 @@ export default function SecretariaAdminPage() {
   };
 
   useEffect(() => {
-    fetchMembros(search);
-  }, [search]);
+    fetchMembros(page, search);
+  }, [page]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Tem certeza que deseja excluir este cadastro de membro?')) return;
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    fetchMembros(1, search);
+  };
 
-    try {
-      const res = await fetch(`/api/membros?id=${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setMembros(prev => prev.filter(m => m.id !== id));
-      }
-    } catch (e) {
-      alert('Erro ao excluir membro.');
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'fotoCarteirinha' | 'fotoBanner') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(prev => ({ ...prev, [field]: reader.result as string }));
+        if (field === 'fotoCarteirinha') setErroFoto('');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Número Membro', 'Nome Completo', 'CPF', 'Telefone', 'E-mail', 'Congregação'];
-    const rows = membros.map(m => [
-      m.numeroMembro || '',
-      `"${m.nomeCompleto}"`,
-      m.cpf || '',
-      m.telefone || '',
-      m.email || '',
-      `"${m.congregacao?.nome || 'Sede'}"`,
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Membros_Assembleia_de_Deus_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleModalSubmit = async (e: React.FormEvent) => {
+  const handleCreateMember = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.fotoCarteirinha) {
+      setErroFoto('A Foto de Carteirinha 3x4 (rosto nítido) é OBRIGATÓRIA para a emissão da carteira digital.');
+      return;
+    }
+
     try {
       const res = await fetch('/api/membros', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
+
       const data = await res.json();
       if (data.success) {
-        alert(`Cadastro realizado com sucesso! Número do Membro: ${data.numeroMembro}`);
-        setShowModal(false);
-        fetchMembros();
+        alert(`Membro ${form.nomeCompleto} cadastrado com sucesso! Registro Nº ${data.numeroMembro}.`);
+        setModalCadastroOpen(false);
+        setForm({
+          nomeCompleto: '',
+          dataNascimento: '',
+          sexo: 'Masculino',
+          estadoCivil: 'Solteiro',
+          cpf: '',
+          telefone: '',
+          fotoCarteirinha: '',
+          fotoBanner: '',
+        });
+        fetchMembros(1, search);
       } else {
-        alert(data.error || 'Erro ao realizar cadastro.');
+        alert(data.error || 'Erro ao cadastrar membro.');
       }
-    } catch (err) {
-      alert('Erro de conexão ao salvar cadastro.');
+    } catch (e) {
+      alert('Erro de conexão.');
     }
   };
 
-  // Paginação dos 800 membros
-  const totalPages = Math.ceil(membros.length / itemsPerPage);
-  const paginatedMembros = membros.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleDeleteMember = async (id: number, nome: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o cadastro de ${nome}?`)) return;
+    try {
+      const res = await fetch(`/api/membros?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        fetchMembros(page, search);
+      }
+    } catch (e) {
+      alert('Erro ao excluir membro.');
+    }
+  };
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* HEADER DA SECRETARIA COM BOTÃO ÚNICO DE CADASTRO */}
+      <div className="bg-white rounded-2xl p-6 border border-[#E6EBF1] shadow-stripe flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#0A2540] flex items-center gap-2">
-            <Users className="w-6 h-6 text-brand-blue" /> Rol de Membros Cadastrados ({membros.length})
-          </h1>
-          <p className="text-[#425466] text-xs mt-1 font-semibold">
-            Banco de Dados SQLite — Consulta, filtro, edição, exclusão e exportação
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-[#0A2540] flex items-center gap-2">
+              <Users className="w-6 h-6 text-brand-blue" /> Secretaria & Rol de Membros
+            </h1>
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-brand-blue text-xs font-extrabold border border-blue-200">
+              {total} Cadastrados no SQLite
+            </span>
+          </div>
+          <p className="text-xs text-[#425466] mt-1 font-semibold">
+            Central única para emissão de carteirinhas com QR Code único e gerenciamento do rol oficial.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleExportCSV}
-            className="px-4 py-2.5 rounded-xl bg-white border border-[#E6EBF1] shadow-stripe-sm text-[#0A2540] text-xs font-bold hover:bg-slate-50 transition-colors flex items-center gap-2"
-          >
-            <Download className="w-4 h-4 text-emerald-600" /> Exportar Todos ({membros.length}) em CSV
-          </button>
-
-          <button 
-            onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md shadow-brand-cyan/20 hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" /> Cadastrar Membro
-          </button>
-        </div>
-      </div>
-
-      {/* BARRA DE PESQUISA POR NOME, TELEFONE OU CPF */}
-      <div className="bg-white rounded-2xl p-4 border border-[#E6EBF1] shadow-stripe-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-          <input 
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Pesquisar entre os 800 membros por nome, CPF, telefone ou número..."
-            className="w-full h-10 pl-10 pr-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold text-xs focus:outline-none focus:border-brand-blue"
-          />
-        </div>
-
+        {/* BOTÃO ÚNICO E OFICIAL DE CADASTRO DE MEMBRO */}
         <button 
-          onClick={() => fetchMembros(search)}
-          className="px-4 py-2 rounded-xl bg-blue-50 border border-blue-200 text-brand-blue text-xs font-bold flex items-center gap-2"
+          onClick={() => setModalCadastroOpen(true)}
+          className="px-6 py-3 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Atualizar Tabela
+          <UserPlus className="w-4 h-4" /> Cadastrar Novo Membro
         </button>
       </div>
 
-      {/* TABELA DE MEMBROS */}
-      <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
-        <div className="p-4 bg-[#F8FAFC] border-b border-[#E6EBF1] flex items-center justify-between">
-          <span className="text-xs font-bold text-[#0A2540]">
-            Exibindo página {currentPage} de {totalPages || 1} (Total: {membros.length} membros no SQLite)
-          </span>
-          <span className="text-[10px] text-[#425466] font-mono font-bold">SELECT * FROM membros WHERE ativo = 1</span>
-        </div>
+      {/* BARRA DE PESQUISA */}
+      <div className="bg-white rounded-2xl p-4 border border-[#E6EBF1] shadow-stripe-sm">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <input 
+              type="text" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar membro por nome, CPF, telefone ou registro..."
+              className="w-full h-10 pl-9 pr-4 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold focus:outline-none focus:border-brand-blue"
+            />
+          </div>
+          <button 
+            type="submit"
+            className="px-5 py-2.5 rounded-xl bg-[#0A2540] text-white text-xs font-bold hover:bg-slate-800 transition-colors"
+          >
+            Buscar
+          </button>
+        </form>
+      </div>
 
+      {/* TABELA DE MEMBROS COM CARTEIRINHA E QR CODE */}
+      <div className="bg-white rounded-2xl border border-[#E6EBF1] shadow-stripe-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#F8FAFC] border-b border-[#E6EBF1] text-[#425466] uppercase font-extrabold">
-              <tr>
-                <th className="py-3.5 px-4">Nº Membro</th>
-                <th className="py-3.5 px-4">Nome Completo</th>
-                <th className="py-3.5 px-4">CPF / Telefone</th>
-                <th className="py-3.5 px-4">Congregação</th>
-                <th className="py-3.5 px-4">Ministérios</th>
-                <th className="py-3.5 px-4 text-right">Ações</th>
+            <thead>
+              <tr className="border-b border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-extrabold uppercase">
+                <th className="py-3 px-4">Foto 3x4</th>
+                <th className="py-3 px-4">Registro</th>
+                <th className="py-3 px-4">Nome Completo</th>
+                <th className="py-3 px-4">Congregação</th>
+                <th className="py-3 px-4">Telefone</th>
+                <th className="py-3 px-4 text-center">Carteirinha & QR Code</th>
+                <th className="py-3 px-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E6EBF1]">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#425466] font-semibold">Carregando cadastros do banco...</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">
+                    Carregando Rol de Membros do SQLite...
+                  </td>
                 </tr>
-              ) : paginatedMembros.length === 0 ? (
+              ) : membros.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#425466] font-semibold">Nenhum membro encontrado com a busca.</td>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-bold">
+                    Nenhum membro encontrado.
+                  </td>
                 </tr>
               ) : (
-                paginatedMembros.map((m) => (
-                  <tr key={m.id} className="hover:bg-[#F8FAFC] transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-extrabold text-brand-blue">{m.numeroMembro || `AD-${m.id.toString().padStart(6, '0')}`}</td>
-                    
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-brand-blue font-extrabold flex items-center justify-center text-xs shrink-0">
-                          {m.nomeCompleto ? m.nomeCompleto[0] : 'M'}
-                        </div>
-                        <div>
-                          <span className="block font-extrabold text-[#0A2540] text-sm">{m.nomeCompleto}</span>
-                          <span className="text-[10px] text-[#425466] font-semibold">{m.email || 'Membro Ativo'}</span>
-                        </div>
-                      </div>
-                    </td>
+                membros.map((m) => {
+                  const fotoRosto = m.fotos?.find((f: any) => f.tipo === 'CARTEIRINHA')?.caminho || m.foto || '/uploads/membros/carteirinha/000001_rosto.jpg';
+                  const qrCodeStr = m.carteirinha?.qrCode || `https://assembleia.com/verificar-carteira?membroId=${m.id}&numero=${m.numeroMembro}`;
 
-                    <td className="py-3.5 px-4 text-[#425466] font-semibold space-y-0.5">
-                      <div className="text-[#0A2540] font-bold">CPF: {m.cpf || 'Fictício'}</div>
-                      <div className="text-[11px] text-[#425466] font-medium">{m.telefone || ''}</div>
-                    </td>
-                    <td className="py-3.5 px-4 text-[#0A2540] font-bold">{m.congregacao?.nome || 'Sede Central'}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap gap-1">
-                        {m.membroMinisterios && m.membroMinisterios.length > 0 ? (
-                          m.membroMinisterios.map((item, idx) => (
-                            <span key={idx} className="px-2 py-0.5 rounded bg-blue-50 text-brand-blue text-[10px] font-extrabold border border-blue-200">
-                              {item.ministerio.nome}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-slate-500 text-[10px] font-bold">Geral</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
-                      <button 
-                        onClick={() => alert(`Edição do membro #${m.numeroMembro}: ${m.nomeCompleto}`)}
-                        className="p-1.5 rounded-lg bg-blue-50 text-brand-blue border border-blue-200 hover:bg-blue-100 transition-colors"
-                        title="Editar Cadastro"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(m.id)}
-                        className="p-1.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-colors"
-                        title="Excluir Cadastro"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                  return (
+                    <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-2.5 px-4">
+                        <img 
+                          src={fotoRosto} 
+                          alt={m.nomeCompleto} 
+                          className="w-10 h-12 object-cover rounded-lg border border-brand-blue shadow-sm"
+                        />
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-extrabold text-brand-blue">
+                        #{m.numeroMembro || m.id}
+                      </td>
+                      <td className="py-2.5 px-4 font-extrabold text-[#0A2540] text-sm">
+                        {m.nomeCompleto}
+                      </td>
+                      <td className="py-2.5 px-4 font-semibold text-slate-600">
+                        {m.congregacao?.nome || 'Sede Central'}
+                      </td>
+                      <td className="py-2.5 px-4 font-semibold text-slate-600">
+                        {m.telefone || m.whatsapp || 'Não informado'}
+                      </td>
+                      <td className="py-2.5 px-4 text-center">
+                        <button 
+                          onClick={() => setCarteiraModalOpen({ ...m, fotoRosto, qrCodeStr })}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold hover:bg-emerald-100 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" /> Carteira com QR Code
+                        </button>
+                      </td>
+                      <td className="py-2.5 px-4 text-right">
+                        <button 
+                          onClick={() => handleDeleteMember(m.id, m.nomeCompleto)}
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          title="Excluir membro"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* CONTROLES DE PAGINAÇÃO */}
-        <div className="p-4 bg-[#F8FAFC] border-t border-[#E6EBF1] flex items-center justify-between">
-          <span className="text-xs text-[#425466] font-bold">
-            Página {currentPage} de {totalPages || 1}
+        {/* PAGINAÇÃO */}
+        <div className="p-4 border-t border-[#E6EBF1] bg-[#F8FAFC] flex items-center justify-between text-xs">
+          <span className="font-bold text-slate-600">
+            Página {page} de {totalPages || 1} ({total} membros)
           </span>
-
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded-lg bg-white border border-[#E6EBF1] text-xs font-bold disabled:opacity-50 flex items-center gap-1"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+              className="p-2 rounded-lg bg-white border border-[#E6EBF1] disabled:opacity-50 text-[#0A2540] font-bold"
             >
-              <ChevronLeft className="w-4 h-4" /> Anterior
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button 
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages}
-              className="px-3 py-1.5 rounded-lg bg-white border border-[#E6EBF1] text-xs font-bold disabled:opacity-50 flex items-center gap-1"
+              disabled={page >= totalPages}
+              onClick={() => setPage(page + 1)}
+              className="p-2 rounded-lg bg-white border border-[#E6EBF1] disabled:opacity-50 text-[#0A2540] font-bold"
             >
-              Próxima <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* MODAL INLINE DE CADASTRO */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl border border-[#E6EBF1] max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-[#E6EBF1]">
-              <h2 className="text-xl font-extrabold text-[#0A2540] flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-brand-blue" /> Cadastro de Membro — Igreja Assembleia de Deus
-              </h2>
-              <button 
-                onClick={() => setShowModal(false)}
-                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors"
-              >
+      {/* MODAL DE NOVO CADASTRO DE MEMBRO (ÚNICO NO SISTEMA) */}
+      {modalCadastroOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-xl w-full border border-[#E6EBF1] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-lg font-extrabold text-[#0A2540] flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-brand-blue" /> Formulário Único de Cadastro de Membro
+              </h3>
+              <button onClick={() => setModalCadastroOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleModalSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="text-sm font-extrabold text-brand-blue uppercase border-b pb-1">1. Dados Pessoais</h3>
+            <form onSubmit={handleCreateMember} className="space-y-4 text-xs">
+              {/* UPLOAD DE FOTO DE CARTEIRINHA 3X4 (OBRIGATÓRIA) */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <label className="block font-extrabold text-[#0A2540]">
+                  Foto 3x4 de Carteirinha * <span className="text-rose-600 font-bold">(OBRIGATÓRIA VINCULADA À CARTEIRA)</span>
+                </label>
+                <div className="flex items-center gap-4">
+                  {form.fotoCarteirinha ? (
+                    <img src={form.fotoCarteirinha} alt="Foto 3x4" className="w-20 h-24 object-cover rounded-xl border border-brand-blue" />
+                  ) : (
+                    <div className="w-20 h-24 rounded-xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-slate-400">
+                      <Camera className="w-6 h-6" />
+                      <span className="text-[9px] font-bold mt-1">3x4 Oblig.</span>
+                    </div>
+                  )}
+
+                  <label className="px-4 py-2 rounded-xl bg-white border border-[#E6EBF1] shadow-sm text-xs font-bold text-[#0A2540] hover:bg-slate-50 cursor-pointer flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-brand-blue" /> Selecionar Foto 3x4
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(e, 'fotoCarteirinha')} />
+                  </label>
+                </div>
+                {erroFoto && <p className="text-xs text-rose-600 font-bold">{erroFoto}</p>}
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#0A2540] mb-1">Nome Completo *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={form.nomeCompleto}
+                  onChange={(e) => setForm({ ...form, nomeCompleto: e.target.value })}
+                  placeholder="Nome completo do membro"
+                  className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#0A2540] mb-1">Nome Completo *</label>
+                  <label className="block font-bold text-[#0A2540] mb-1">Data de Nascimento *</label>
                   <input 
-                    type="text" 
+                    type="date" 
                     required
-                    value={form.nomeCompleto}
-                    onChange={(e) => setForm({ ...form, nomeCompleto: e.target.value })}
-                    placeholder="Digite o nome completo do membro"
-                    className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold focus:outline-none focus:border-brand-blue"
+                    value={form.dataNascimento}
+                    onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#0A2540] mb-1">Data de Nascimento *</label>
-                    <input 
-                      type="date" 
-                      required
-                      value={form.dataNascimento}
-                      onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
-                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#0A2540] mb-1">CPF</label>
-                    <input 
-                      type="text" 
-                      value={form.cpf}
-                      onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                      placeholder="000.000.000-00"
-                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#0A2540] mb-1">Telefone / WhatsApp</label>
-                    <input 
-                      type="text" 
-                      value={form.telefone}
-                      onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                      placeholder="(00) 00000-0000"
-                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#0A2540] mb-1">E-mail</label>
-                    <input 
-                      type="email" 
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="membro@email.com"
-                      className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-xs text-[#0A2540] font-bold"
-                    />
-                  </div>
+                <div>
+                  <label className="block font-bold text-[#0A2540] mb-1">Sexo *</label>
+                  <select 
+                    value={form.sexo}
+                    onChange={(e) => setForm({ ...form, sexo: e.target.value })}
+                    className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold"
+                  >
+                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Feminino</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E6EBF1]">
-                <button 
-                  type="button" 
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 text-[#0A2540] text-xs font-bold"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="px-6 py-2 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md flex items-center gap-2"
-                >
-                  <Send className="w-4 h-4" /> Enviar Cadastro
-                </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#0A2540] mb-1">CPF</label>
+                  <input 
+                    type="text" 
+                    value={form.cpf}
+                    onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                    className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#0A2540] mb-1">Telefone / WhatsApp</label>
+                  <input 
+                    type="text" 
+                    value={form.telefone}
+                    onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                    placeholder="(11) 98888-7777"
+                    className="w-full h-10 px-3 rounded-xl border border-[#E6EBF1] bg-[#F8FAFC] text-[#0A2540] font-bold"
+                  />
+                </div>
               </div>
+
+              <button 
+                type="submit"
+                className="w-full py-3.5 rounded-xl bg-flame-gradient text-white text-xs font-extrabold shadow-md hover:scale-[1.01] transition-transform"
+              >
+                Confirmar Cadastro com Carteira & QR Code
+              </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE VISUALIZAÇÃO DA CARTEIRINHA DIGITAL COM QR CODE ÚNICO */}
+      {carteiraModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0A2540] rounded-3xl p-6 max-w-md w-full border border-[#1E4976] shadow-2xl text-white space-y-6 relative">
+            <button 
+              onClick={() => setCarteiraModalOpen(null)}
+              className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <img src="/logo.jpg" alt="Logo AD" className="w-10 h-10 rounded-xl object-cover border border-white/20" />
+              <div>
+                <h3 className="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Igreja Assembleia de Deus</h3>
+                <p className="text-[10px] text-slate-300 font-semibold">{carteiraModalOpen.congregacao?.nome || 'Sede Central'}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <img 
+                src={carteiraModalOpen.fotoRosto} 
+                alt="Foto Carteira" 
+                className="w-24 h-28 object-cover rounded-xl border-2 border-amber-400 shadow"
+              />
+              <div className="space-y-2 text-xs flex-1">
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Nome do Membro</span>
+                  <span className="font-extrabold text-sm text-white block leading-tight">{carteiraModalOpen.nomeCompleto}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Nº de Registro</span>
+                  <span className="font-mono font-extrabold text-amber-400 text-xs">#{carteiraModalOpen.numeroMembro || carteiraModalOpen.id}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* QR CODE ÚNICO PERSISTIDO NA CARTEIRA */}
+            <div className="bg-white/10 rounded-2xl p-3 border border-white/10 flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-[10px] text-amber-400 font-extrabold uppercase flex items-center gap-1">
+                  <QrCodeIcon className="w-3.5 h-3.5" /> QR Code Único de Autenticidade
+                </span>
+                <p className="text-[9px] text-slate-300">
+                  Gerado automaticamente para a carteira deste membro.
+                </p>
+              </div>
+
+              <div className="bg-white p-1 rounded-xl shadow-md flex-shrink-0">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(carteiraModalOpen.qrCodeStr)}`} 
+                  alt="QR Code Carteira"
+                  className="w-16 h-16 object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}
