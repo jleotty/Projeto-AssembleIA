@@ -16,7 +16,8 @@ import {
   User,
   Heart,
   BookOpen,
-  Sparkles
+  Sparkles,
+  Save
 } from 'lucide-react';
 
 export default function SecretariaMembrosPage() {
@@ -494,12 +495,12 @@ export default function SecretariaMembrosPage() {
                 </div>
               </div>
 
-              {/* BOTÃO NOMEADO EXATAMENTE: "Cadastrar Membro" */}
+              {/* BOTÃO NOMEADO EXATAMENTE: "Salvar cadastro" */}
               <button 
                 type="submit" 
                 className="w-full py-4 rounded-xl bg-flame-gradient text-white text-sm font-extrabold shadow-lg hover:scale-[1.01] transition-transform cursor-pointer flex items-center justify-center gap-2"
               >
-                <UserPlus className="w-4 h-4" /> Cadastrar Membro
+                <Save className="w-4 h-4" /> Salvar cadastro
               </button>
             </form>
           </div>
