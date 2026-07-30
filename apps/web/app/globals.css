@@ -21,28 +21,18 @@
   transform: translateY(-2px);
 }
 
+/* GRADIENTE DA LOGO DA CHAMA */
 .flame-text {
-  background: linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
+  background: linear-gradient(135deg, #1E3A8A 0%, #4338CA 50%, #DC2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* GRADIENTE EXATO DA LOGO DA CHAMA (AZUL CELESTE -> AZUL ESCURO -> VERMELHO -> LARANJA CHAMA -> AMARELO DOURADO) */
-.bg-flame-logo {
-  background: linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
+.flame-border-soft {
+  background: linear-gradient(135deg, #1E3A8A 0%, #4338CA 50%, #DC2626 100%);
 }
 
-.bg-mesh-logo {
-  background-color: #0F172A;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(0, 114, 206, 0.95) 0px, transparent 55%),
-    radial-gradient(at 40% 10%, rgba(63, 81, 181, 0.95) 0px, transparent 55%),
-    radial-gradient(at 80% 30%, rgba(211, 47, 47, 0.9) 0px, transparent 55%),
-    radial-gradient(at 95% 95%, rgba(255, 214, 0, 0.85) 0px, transparent 55%),
-    linear-gradient(135deg, #0072CE 0%, #3F51B5 25%, #D32F2F 55%, #FF6D00 80%, #FFD600 100%);
-}
-
-.mesh-3d-overlay {
-  background: linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 100%);
-  backdrop-filter: blur(16px);
+/* DEGRADÊ BEM LEVE E ELEGANTE SOBRE FUNDO BRANCO FIEL AO PRINT */
+.bg-flame-soft {
+  background: linear-gradient(135deg, #F0F5FF 0%, #F5F3FF 50%, #FFF1F2 100%);
 }
